@@ -1,0 +1,11 @@
+"workshopitem"
+{
+	"appid"		"811320"
+	"publishedfileid"		"3354490087"
+	"contentfolder"		"/Users/klaas/JupiterHell_mods/EnemyAlerter/EnemyAlerter"
+	"previewfile"		""
+	"visibility"		"0"
+	"title"		"Enemy Alerter"
+	"description"		"Alerts about visible enemies. Useful on steamdeck to not miss an enemy and being shot at"
+	"changenote"		"Version 0.1"
+}

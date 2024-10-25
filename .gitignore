@@ -1,5 +1,2 @@
-builder_osx/*
-build/publish_workshop.sh
-steamworkshop_ea.vdf
 jh_lua_files/*
 steamcredentials.sh
