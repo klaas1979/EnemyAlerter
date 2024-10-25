@@ -1,15 +1,68 @@
-ENEMIES = {
-    visible = 0,
-    prev_visible = 0,
+ALERT = {
     size_x = 0,
     rounds_shown = 0,
     title = "",
     display = "",
+}
+
+ENEMIES = {
+    visible = 0,
+    prev_visible = 0,
     types = {},
+}
+
+ACTION = {
+    last_command = 0,
+    used_weapon = false,
     last_action_time = 0,
+    last_receive_damage_time = 0,
     player_rushing = false,
     rushed_cooldown_rounds = 0,
 }
+
+function set_last_command(command, target)
+    ACTION.used_weapon = false
+    ACTION.last_command = command
+    if command == COMMAND_USE and target and target.weapon then
+        ACTION.used_weapon = true
+    end
+end
+
+function last_command()
+    local result = "unknown command=" .. ACTION.last_command
+    if ACTION.last_command == COMMAND_ACTIVATE then
+        result = "activate"
+    elseif ACTION.last_command == COMMAND_DROP then
+        result = "drop"
+    elseif ACTION.last_command == COMMAND_MOVE_E then
+        result = "move_e"
+    elseif ACTION.last_command == COMMAND_MOVE_N then
+        result = "move_n"
+    elseif ACTION.last_command == COMMAND_MOVE_S then
+        result = "move_s"
+    elseif ACTION.last_command == COMMAND_MOVE_W then
+        result = "move_w"
+    elseif ACTION.last_command == COMMAND_PICKUP then
+        result = "pickup"
+    elseif ACTION.last_command == COMMAND_REARM then
+        result = "rearm"
+    elseif ACTION.last_command == COMMAND_RELOAD then
+        result = "reload"
+    elseif ACTION.last_command == COMMAND_USE then
+        result = "use"
+    elseif ACTION.last_command == COMMAND_WAIT then
+        result = "wait"
+    end
+    return result
+end
+
+function last_command_moved()
+    if ACTION.last_command and ACTION.last_command >= COMMAND_MOVE and ACTION.last_command <= COMMAND_MOVE_F then
+        return true
+    else
+        return false
+    end
+end
 
 -- Increments the enemy with identifier by Type in ENEMIES
 function increment_enemy(identifier)
@@ -42,10 +95,11 @@ function yellow_text(text)
 end
 
 function ranges(item_attributes)
-    local result = "("
+    local result = ""
     if item_attributes.opt_distance then result = result .. item_attributes.opt_distance end
     if item_attributes.max_distance then result = result .. "/" .. item_attributes.max_distance end
-    return result .. ")"
+    if result:len() > 0 then result = "(" .. result .. ")" end
+    return result
 end
 
 function shots_x_damage(item_attributes)
@@ -70,12 +124,12 @@ function main_weapon(entity)
 end
 
 function calculate_size_x(line)
-    ENEMIES.size_x = math.max(line:len(), ENEMIES.size_x)
+    ALERT.size_x = math.max(line:len(), ALERT.size_x)
 end
 
 function append_enemy_line(line)
-    if ENEMIES.display:len() > 0 then ENEMIES.display = ENEMIES.display .. "\n" end
-    ENEMIES.display = ENEMIES.display .. line
+    if ALERT.display:len() > 0 then ALERT.display = ALERT.display .. "\n" end
+    ALERT.display = ALERT.display .. line
 end
 
 function count_enemy_types()
@@ -91,14 +145,14 @@ end
 
 function set_shown_alert()
     if ENEMIES.visible > ENEMIES.prev_visible then
-        ENEMIES.rounds_shown = 0
+        ALERT.rounds_shown = 0
     elseif ENEMIES.visible <= ENEMIES.prev_visible then
-        ENEMIES.rounds_shown = ENEMIES.rounds_shown + 1
+        ALERT.rounds_shown = ALERT.rounds_shown + 1
     end
 end
 
 function create_long_alert()
-    ENEMIES.title = yellow_text(ENEMIES.visible) .. " Enemies"
+    ALERT.title = yellow_text(ENEMIES.visible) .. " Enemies"
     for weapon_used, count in pairs(ENEMIES.types) do
         local enemy_display_line = yellow_text(count) .. "x" .. weapon_used
         calculate_size_x(enemy_display_line)
@@ -107,7 +161,7 @@ function create_long_alert()
 end
 
 function create_short_alert()
-    ENEMIES.title =  yellow_text(ENEMIES.visible) .. " En"
+    ALERT.title =  yellow_text(ENEMIES.visible) .. " En"
     for weapon_used, count in pairs(ENEMIES.types) do
         local enemy_display_line = yellow_text(count) .. "x" .. string.sub(weapon_used, 1, 4)
         calculate_size_x(enemy_display_line)
@@ -118,12 +172,12 @@ end
 function count_enemies()
     ENEMIES.prev_visible = ENEMIES.visible
     ENEMIES.visible = 0
-    ENEMIES.size_x = 0
+    ALERT.size_x = 0
     ENEMIES.types = {}
-    ENEMIES.display = ""
+    ALERT.display = ""
     count_enemy_types()
     set_shown_alert()
-    if ENEMIES.rounds_shown <= 3 then
+    if ALERT.rounds_shown <= 3 then
         create_long_alert()
     else
         create_short_alert()
@@ -132,13 +186,32 @@ end
 
 function calculate_rushing()
     local current_time = ui:get_time_ms()
-    local duration = current_time - ENEMIES.last_action_time
-    ENEMIES.last_action_time = current_time
-    if duration < 600 and ENEMIES.rushed_cooldown_rounds <= 0 then
-        ENEMIES.player_rushing = true
+    local duration = current_time - ACTION.last_action_time
+    ACTION.last_action_time = current_time
+    if duration < 500 and ACTION.rushed_cooldown_rounds <= 0 then
+        ACTION.player_rushing = true
     else
-        ENEMIES.player_rushing = false
-        ENEMIES.rushed_cooldown_rounds = ENEMIES.rushed_cooldown_rounds - 1
+        ACTION.player_rushing = false
+        ACTION.rushed_cooldown_rounds = ACTION.rushed_cooldown_rounds - 1
+    end
+end
+
+function reset_rushed_cooldown()
+    ACTION.rushed_cooldown_rounds = 15
+end
+
+function rushed_into_enemies()
+    if ENEMIES.prev_visible == 0 and ENEMIES.visible > 0 and last_command_moved() then
+        return true
+    else
+        return false
+    end
+end
+function many_new_enemies()
+    if ENEMIES.visible > (ENEMIES.prev_visible + 3) then
+        return true
+    else
+        return false
     end
 end
 
@@ -154,24 +227,20 @@ register_blueprint "enemy_alerter"
                 if ENEMIES.visible > 0 then
                     ui:alert {
                             id = 1,
-                            title = ENEMIES.title,
+                            title = ALERT.title,
                             teletype = 0,
-                            content = ENEMIES.display,
-                            size = ivec2(ENEMIES.size_x, -1),
+                            content = ALERT.display,
+                            size = ivec2(ALERT.size_x, -1),
                             position = ivec2(1, 20),
                             modal = false,
                         }
                 end
 
-                local rushed_into_enemies = false
-                if ENEMIES.prev_visible == 0 and ENEMIES.visible > 0 then rushed_into_enemies = true end
-                local many_new_enemies = false
-                if ENEMIES.visible > (ENEMIES.prev_visible + 3) then many_new_enemies = true end
-                if ENEMIES.player_rushing and (rushed_into_enemies or many_new_enemies) then
-                    ENEMIES.rushed_cooldown_rounds = 15
+                if ACTION.player_rushing and (rushed_into_enemies() or many_new_enemies()) then
+                    reset_rushed_cooldown()
                     ui:alert {
                             id = 2,
-                            title = ENEMIES.title,
+                            title = ALERT.title,
                             teletype = 0,
                             content = "Stop rushing enemies in sight!",
                             size = ivec2(40, -1),
@@ -179,6 +248,29 @@ register_blueprint "enemy_alerter"
                             modal = true,
                         }
                 end
+            end
+        ]=],
+
+        -- store last action type
+        on_pre_command = [=[
+            function ( self, entity, command, target )
+                set_last_command(command, target)
+                nova.log("Last command=" .. last_command())
+            end
+        ]=],
+
+        -- store last time damage was received
+        on_receive_damage = [=[
+            function ( self, source, weapon, amount )
+                ACTION.last_receive_damage_time = ui:get_time_ms()
+            end
+        ]=],
+
+        -- prevent an alert to be shown over level up dialog
+        on_level_up = [=[
+            function ( self, entity )
+                ui:alert_clear(1)
+                ui:alert_clear(2)
             end
         ]=],
     },

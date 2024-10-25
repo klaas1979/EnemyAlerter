@@ -1,0 +1,22 @@
+{
+  "Lua.diagnostics.globals": [
+    "COMMAND_USE",
+    "COMMAND_ACTIVATE",
+    "COMMAND_DROP",
+    "COMMAND_MOVE_E",
+    "COMMAND_MOVE_N",
+    "COMMAND_MOVE_S",
+    "COMMAND_MOVE_W",
+    "COMMAND_PICKUP",
+    "COMMAND_REARM",
+    "COMMAND_RELOAD",
+    "COMMAND_WAIT",
+    "COMMAND_MOVE",
+    "COMMAND_MOVE_F",
+    "nova",
+    "world",
+    "ui",
+    "register_blueprint",
+    "EF_NOPICKUP"
+  ]
+}
