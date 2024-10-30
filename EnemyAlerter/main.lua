@@ -7,12 +7,6 @@ HEALTH = {
     before = 100
 }
 
-ACTION = {
-    last_action_time = 0,
-    player_rushing = false,
-    rushed_cooldown_rounds = 0
-}
-
 function store_health(player)
     HEALTH.before = HEALTH.current
     HEALTH.current = player.health.current

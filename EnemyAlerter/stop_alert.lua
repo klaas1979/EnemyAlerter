@@ -15,7 +15,7 @@ STOP_ALERT = {
       title = self.title,
       teletype = 0,
       content = "Stop rushing enemies in sight!",
-      size = ivec2(30, -1),
+      size = ivec2(40, -1),
       position = ivec2(-1, -1),
       modal = true,
     }
