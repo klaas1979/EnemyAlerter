@@ -17,6 +17,8 @@
     "world",
     "ui",
     "register_blueprint",
-    "EF_NOPICKUP"
+    "EF_NOPICKUP",
+    "level",
+    "ivec2"
   ]
 }
