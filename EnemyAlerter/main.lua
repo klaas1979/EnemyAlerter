@@ -1,3 +1,5 @@
+nova.log("Enemy Alerter loading")
+
 nova.require "analyzer"
 nova.require "info_alert"
 nova.require "stop_alert"
