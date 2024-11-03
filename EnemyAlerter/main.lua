@@ -36,16 +36,8 @@ register_blueprint "enemy_alerter" {
             function ( self, actor, command, target, time )
                 --nova.log("on_post_command command=" .. last_command())
             end
+            ui:alert_clear(1)
         ]=],
-
-        -- prevent an alert to be shown over level up dialog
-        on_level_up = [=[
-            function ( self, entity )
-                nova.log("on_level_up")
-                ui:alert_clear(1)
-                ui:alert_clear(2)
-            end
-        ]=]
     }
 }
 

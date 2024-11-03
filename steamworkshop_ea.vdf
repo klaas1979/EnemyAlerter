@@ -7,5 +7,5 @@
 	"visibility"		"0"
 	"title"		"Enemy Alerter"
 	"description"		"Alerts about visible enemies and displays chances to be hit and killed"
-	"changenote"		"Version 0.4 added meta.lua"
+	"changenote"		"Version 0.5 fixing alert shown on level up"
 }
