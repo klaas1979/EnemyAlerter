@@ -34,9 +34,8 @@ register_blueprint "enemy_alerter" {
 
         on_post_command = [=[
             function ( self, actor, command, target, time )
-                --nova.log("on_post_command command=" .. last_command())
+                ui:alert_clear(1)
             end
-            ui:alert_clear(1)
         ]=],
     }
 }
