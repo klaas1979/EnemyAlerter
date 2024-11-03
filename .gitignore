@@ -1,2 +1,3 @@
 jh_lua_files/*
 steamcredentials.sh
+*.code-workspace

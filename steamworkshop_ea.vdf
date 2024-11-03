@@ -6,6 +6,6 @@
 	"previewfile"		""
 	"visibility"		"0"
 	"title"		"Enemy Alerter"
-	"description"		"Alerts about visible enemies. Useful on steamdeck to not miss an enemy and being shot at"
-	"changenote"		"Version 0.1"
+	"description"		"Alerts about visible enemies and displays chances to be hit and killed"
+	"changenote"		"Version 0.3 added meta.lua"
 }
