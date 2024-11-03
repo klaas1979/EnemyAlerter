@@ -1,29 +1,35 @@
 STOP_ALERT = {
   analyzer = nil,
   title = "",
+  content = "",
   used_weapon = false,
   command = nil,
   last_action_time = 0,
   player_rushing = false,
   rushed_cooldown_rounds = 0,
+  -- how many enemies must be newly visible to spawn alert
+  many_new_enemies_count = 3,
 
   show = function(self)
-    self:create_long_title()
-
+    self:create_title()
+    self:create_content()
     ui:alert {
       id = 2,
       title = self.title,
       teletype = 0,
-      content = "Stop rushing enemies in sight!",
-      size = ivec2(40, -1),
+      content = self.content,
+      size = ivec2(35, -1),
       position = ivec2(-1, -1),
       modal = true,
     }
   end,
 
-  create_long_title = function(self)
-    self.title = string.format("{R%i} %s", self.analyzer:visible_enemies(), "Enemies")
-    self.size_x = self.title:len() + 2
+  create_title = function(self)
+    self.title = string.format("{Y%i} %s", self.analyzer:visible_enemies(), "Enemies")
+    end,
+  
+  create_content = function(self)
+    self.content = "Stop rushing dangerous area!"
   end,
 
   set_last_command = function(self, command, target)
@@ -90,27 +96,19 @@ STOP_ALERT = {
     self.rushed_cooldown_rounds = 15
   end,
 
+  -- Returns if any stop factors like rushing are active to prevent command execution
   stop_command = function(self)
-    if self.player_rushing and (self:rushed_into_enemies() or self:many_new_enemies()) then
+    local rushed_into_enemies = self.analyzer:prev_visible_enemies() == 0 and self.analyzer:visible_enemies() > 0 and
+        self:last_command_moved()
+
+    local many_new_enemies = self.analyzer:visible_enemies() >
+        (self.analyzer:prev_visible_enemies() + self.many_new_enemies_count)
+
+    if self.player_rushing and (rushed_into_enemies or many_new_enemies) then
       return true
     else
       return false
     end
   end,
 
-  rushed_into_enemies = function(self)
-    if self.analyzer:prev_visible_enemies() == 0 and self.analyzer:visible_enemies() > 0 and self:last_command_moved() then
-      return true
-    else
-      return false
-    end
-  end,
-
-  many_new_enemies = function(self)
-    if self.analyzer:visible_enemies() > (self.analyzer:prev_visible_enemies() + 3) then
-      return true
-    else
-      return false
-    end
-  end,
 }

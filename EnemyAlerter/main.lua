@@ -2,23 +2,13 @@ nova.require "analyzer"
 nova.require "info_alert"
 nova.require "stop_alert"
 
-HEALTH = {
-    current = 100,
-    before = 100
-}
-
-function store_health(player)
-    HEALTH.before = HEALTH.current
-    HEALTH.current = player.health.current
-end
-
 register_blueprint "enemy_alerter" {
     flags = {EF_NOPICKUP},
     callbacks = {
         on_action = [=[
             function ( self, entity )
+                ANALYZER:store_health(entity)
                 ANALYZER:initialize()
-                store_health(entity)
                 INFO_ALERT.analyzer = ANALYZER
                 INFO_ALERT:show()
             end

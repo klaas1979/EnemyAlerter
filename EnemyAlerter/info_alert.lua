@@ -11,12 +11,13 @@ INFO_ALERT = {
     self.content = ""
 
     if self.analyzer:visible_enemies() > 0 then
+      local result = self:create_content_odds()
       if self.rounds_shown <= 3 then
         self:create_long_title()
-        self:create_long_content()
+        self:add_damage_lines(result, self.add_dmg_line_long)
       else
         self:create_short_title()
-        self:create_short_content()
+        self:add_damage_lines(result, self.add_dmg_line_short)
       end
       self:set_shown_alert()
       ui:alert {
@@ -36,7 +37,7 @@ INFO_ALERT = {
     self.size_x = self.title:len() + 2
   end,
 
-  create_long_content = function(self)
+  create_long_content_enemies = function(self)
     for i, e in pairs(self.analyzer.enemies) do
       local line
       if e.shots > 1 then
@@ -50,12 +51,75 @@ INFO_ALERT = {
     end
   end,
 
+  create_content_odds = function(self)
+    local health = self.analyzer.health_current
+    local result = {}
+
+    for i, dmg_odd in pairs(self.analyzer.damage_odds) do
+      if dmg_odd.damage >= health then result.die = dmg_odd end
+      if dmg_odd.damage >= (health * 3 / 4) and dmg_odd.damage < health then result.health75 = dmg_odd end
+      if dmg_odd.damage < (health * 1 / 2) and dmg_odd.damage < (health * 3 / 4) then result.health50 = dmg_odd end
+      if dmg_odd.damage < (health * 1 / 10) and dmg_odd.damage < (health * 1 / 2) then result.health25 = dmg_odd end
+      if dmg_odd.damage < (health * 1 / 4) and dmg_odd.damage < (health * 1 / 4) then result.health10 = dmg_odd end
+    end
+    return result
+  end,
+
+  add_damage_lines = function(self, result, format_function)
+    if result.die and result.die.odd >= 1 then
+      format_function(self, result.die.odd, result.die.damage, "DIE", "R")
+    end
+    if result.health75 and result.health75.odd >= 1 then
+      format_function(self, result.health75.odd, result.health75.damage,
+        "3/4", "Y")
+    end
+    if result.health50 and result.health50.odd >= 1 then
+      format_function(self, result.health50.odd, result.health50.damage,
+        "1/2", "Y")
+    end
+    if result.health25 and result.health25.odd >= 1 then
+      format_function(self, result.health25.odd, result.health25.damage,
+        "1/4")
+    end
+    if result.health10 and result.health10.odd >= 1 then
+      format_function(self, result.health10.odd, result.health10.damage,
+        "/10")
+    end
+  end,
+  add_dmg_line_long = function(self, odd, damage, text, color)
+    local line = ""
+    if text and color then
+      line = string.format("{%s%s} %.f%% %i", color, text, odd, damage)
+    elseif text then
+      line = string.format("%s %.f%% %i", text, odd, damage)
+    else
+      line = string.format("%.f%% %i", odd, damage)
+    end
+    self:calculate_size_x(line)
+    if string.len(self.content) > 0 then self.content = self.content .. "\n" end
+    self.content = self.content .. line
+  end,
+
+  add_dmg_line_short = function(self, odd, damage, text, color)
+    local line = ""
+    if text and color then
+      line = string.format("{%s%s} %.f%%", color, text, odd)
+    elseif text then
+      line = string.format("%s %.f%%", text, odd)
+    else
+      line = string.format("%.f%%", odd)
+    end
+    self:calculate_size_x(line)
+    if string.len(self.content) > 0 then self.content = self.content .. "\n" end
+    self.content = self.content .. line
+  end,
+
   create_short_title = function(self)
     self.title = string.format("{R%i} %s", self.analyzer:visible_enemies(), "En.")
     self.size_x = self.title:len() + 3
   end,
 
-  create_short_content = function(self)
+  create_short_content_enemies = function(self)
     for i, e in pairs(self.analyzer.enemies) do
       local line
       if e.shots > 1 then
@@ -70,7 +134,7 @@ INFO_ALERT = {
   end,
 
   calculate_size_x = function(self, line)
-    self.size_x = math.max(line:len(), self.size_x)
+    self.size_x = math.max(line:len() + 1, self.size_x)
   end,
 
   set_shown_alert = function(self)

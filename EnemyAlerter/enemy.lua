@@ -93,11 +93,7 @@ ENEMY = {
   chance_to_hit = function(self, enemy_data)
     local wcth = enemy_data:weapon_chance_to_hit()
     local final_accuracy = wcth * enemy_data.accuracy
-    --[[nova.log("wcth=" ..
-      wcth ..
-      ", eacc=" ..
-      enemy_data.accuracy ..
-      ", cover=" .. enemy_data.cover .. ", cover_mod=" .. self.player_cover_mod .. ", evasion=" .. self.player_evasion)]]
+
     -- cover and hunker
     final_accuracy = final_accuracy * (100 - enemy_data.cover) / 100
     final_accuracy = final_accuracy * (100 - enemy_data.cover * self.player_cover_mod) / 100
@@ -105,6 +101,15 @@ ENEMY = {
     -- evasion bonus dodge
     final_accuracy = final_accuracy * (100 - self.player_evasion) / 100
     final_accuracy = final_accuracy + enemy_data.weapon_accuracy
+
+    if final_accuracy == nil then
+      nova.log("wcth=" ..
+        wcth ..
+        ", eacc=" ..
+        enemy_data.accuracy ..
+        ", cover=" .. enemy_data.cover .. ", cover_mod=" .. self.player_cover_mod .. ", evasion=" .. self.player_evasion
+        .. ", weap_acc=" .. tostring(enemy_data.weapon_accuracy))
+    end
     enemy_data.chance_to_hit = final_accuracy
   end,
 }
