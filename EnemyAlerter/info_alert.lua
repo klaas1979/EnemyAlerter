@@ -58,9 +58,9 @@ INFO_ALERT = {
     for i, dmg_odd in pairs(self.analyzer.damage_odds) do
       if dmg_odd.damage >= health then result.die = dmg_odd end
       if dmg_odd.damage >= (health * 3 / 4) and dmg_odd.damage < health then result.health75 = dmg_odd end
-      if dmg_odd.damage < (health * 1 / 2) and dmg_odd.damage <= (health * 3 / 4) then result.health50 = dmg_odd end
-      if dmg_odd.damage < (health * 1 / 10) and dmg_odd.damage <= (health * 1 / 2) then result.health25 = dmg_odd end
-      if dmg_odd.damage < (health * 1 / 4) and dmg_odd.damage <= (health * 1 / 4) then result.health10 = dmg_odd end
+      if dmg_odd.damage >= (health * 1 / 2) and dmg_odd.damage < (health * 3 / 4) then result.health50 = dmg_odd end
+      if dmg_odd.damage >= (health * 1 / 10) and dmg_odd.damage < (health * 1 / 2) then result.health25 = dmg_odd end
+      if dmg_odd.damage >= (health * 1 / 4) and dmg_odd.damage < (health * 1 / 4) then result.health10 = dmg_odd end
     end
     return result
   end,
@@ -133,8 +133,8 @@ INFO_ALERT = {
     end
   end,
 
-  calculate_size_x = function(self, line)
-    self.size_x = math.max(line:len() + 1, self.size_x)
+    calculate_size_x = function(self, line)
+    self.size_x = math.max(line:len() + 4, self.size_x)
   end,
 
   set_shown_alert = function(self)

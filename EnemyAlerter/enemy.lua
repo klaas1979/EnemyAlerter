@@ -17,6 +17,7 @@ ENEMY = {
     return {
       damage = 0,
       shots = 0,
+      is_shotgun = false,
       distance = nil,
       min_distance = 0,
       opt_distance = 1,
@@ -29,6 +30,9 @@ ENEMY = {
       ---@diagnostic disable-next-line: redefined-local
       set_weapon = function(self, weapon)
         if weapon then
+          if weapon.weapon.group == world:hash("shotguns") then
+            self.is_shotgun = true
+          end
           local wa = weapon.attributes
           if wa then
             if wa.damage then
@@ -69,9 +73,10 @@ ENEMY = {
 
       ---@diagnostic disable-next-line: redefined-local
       tostring = function(self)
-        return string.format("dmg=%ix%i cth=%.f%% dst=%.1f rng=%i/%i/%i, cov=%.2f", self.damage or 0, self.shots or 1,
+        return string.format("dmg=%ix%i cth=%.f%% dst=%.1f rng=%i/%i/%i, cov=%.2f, shotgun=%s", self.damage or 0,
+          self.shots or 1,
           self.chance_to_hit or 100, self.distance or 1, self.min_distance or 0, self.opt_distance or 1,
-          self.max_distance or 1, self.cover or 0)
+          self.max_distance or 1, self.cover or 0, tostring(self.is_shotgun))
       end
     }
   end,
@@ -83,10 +88,14 @@ ENEMY = {
     enemy_data.distance = self.level:distance(self.player, enemy)
     local enemy_position = world:get_position(enemy)
     enemy_data.cover = self.level:get_max_cover(enemy_position, self.player_position)
-    if enemy.attributes.accuracy then
-      enemy_data.accuracy = 100 + enemy.attributes.accuracy
+        if enemy.attributes.accuracy then
+            enemy_data.accuracy = 100 + enemy.attributes.accuracy
+        end
+    if enemy_data.is_shotgun then
+      self:shotgun_damage(enemy_data)
+    else   
+      self:chance_to_hit(enemy_data)
     end
-    self:chance_to_hit(enemy_data)
     return enemy_data
   end,
 
@@ -111,5 +120,10 @@ ENEMY = {
         .. ", weap_acc=" .. tostring(enemy_data.weapon_accuracy))
     end
     enemy_data.chance_to_hit = final_accuracy
-  end,
+    end,
+  
+    shotgun_damage = function(self, enemy_data)
+        enemy_data.damage = math.ceil(enemy_data:weapon_chance_to_hit() * enemy_data.damage)
+        nova.log("Shotgun dmg=" ..enemy_data.damage)
+      end,
 }
