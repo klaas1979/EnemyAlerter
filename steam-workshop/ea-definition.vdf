@@ -8,7 +8,7 @@
 	"title"		"Enemy Alerter"
 	"description"		"Helper that shows an info alerts about number of visible enemies and their chances to hit and kill you.
 	Chances are sorted by damage categories to give a quick indication about the danger.
-	Die=you die if hit, 3/4 or more of remaining health, 1/2 or more=of remaining health 1/4 or mor eof remaining health or 1/10 or more of remaining health. Atk Atk chance and damage.
+	Die=you die if hit, 3/4 or more of remaining health, 1/2 or more=of remaining health, 1/4 or more of remaining health, 1/10 or more of remaining health, Atk=Atk chance and damage.
 
 	The plugin is very useful for people moving to fast and being shot at. It helps a lot on the steam deck where enemies are sometimes hard to make out.
 
