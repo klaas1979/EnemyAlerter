@@ -1,3 +1,5 @@
+nova.require "logger"
+
 ENEMY = {
   level = nil,
   player = nil,
@@ -61,12 +63,10 @@ ENEMY = {
         elseif self.opt_distance and self.max_distance and self.distance > self.opt_distance then
           local steps = (self.max_distance - self.opt_distance)
           result = (steps - (self.distance - self.opt_distance)) / steps
-        elseif self.opt_distance and self.distance < self.opt_distance then
+        elseif self.opt_distance and self.distance <= self.opt_distance then
           result = 1.0
-        else
-          if self.distance > 1.5 then
-            result = 0.0
-          end
+        elseif self.distance > 1.5 then
+          result = 0.0
         end
         return result
       end,
@@ -88,12 +88,12 @@ ENEMY = {
     enemy_data.distance = self.level:distance(self.player, enemy)
     local enemy_position = world:get_position(enemy)
     enemy_data.cover = self.level:get_max_cover(enemy_position, self.player_position)
-        if enemy.attributes.accuracy then
-            enemy_data.accuracy = 100 + enemy.attributes.accuracy
-        end
+    if enemy.attributes.accuracy then
+      enemy_data.accuracy = 100 + enemy.attributes.accuracy
+    end
     if enemy_data.is_shotgun then
       self:shotgun_damage(enemy_data)
-    else   
+    else
       self:chance_to_hit(enemy_data)
     end
     return enemy_data
@@ -111,19 +111,20 @@ ENEMY = {
     final_accuracy = final_accuracy * (100 - self.player_evasion) / 100
     final_accuracy = final_accuracy + enemy_data.weapon_accuracy
 
-    if final_accuracy == nil then
-      nova.log("wcth=" ..
-        wcth ..
-        ", eacc=" ..
-        enemy_data.accuracy ..
-        ", cover=" .. enemy_data.cover .. ", cover_mod=" .. self.player_cover_mod .. ", evasion=" .. self.player_evasion
-        .. ", weap_acc=" .. tostring(enemy_data.weapon_accuracy))
-    end
+    LOGGER:debug("wcth=" ..
+      wcth ..
+      ", eacc=" ..
+      enemy_data.accuracy ..
+      ", cover=" .. enemy_data.cover .. ", cover_mod=" .. self.player_cover_mod .. ", evasion=" .. self.player_evasion
+      .. ", weap_acc=" .. tostring(enemy_data.weapon_accuracy))
     enemy_data.chance_to_hit = final_accuracy
-    end,
-  
-    shotgun_damage = function(self, enemy_data)
-        enemy_data.damage = math.ceil(enemy_data:weapon_chance_to_hit() * enemy_data.damage)
-        nova.log("Shotgun dmg=" ..enemy_data.damage)
-      end,
+  end,
+
+  shotgun_damage = function(self, enemy_data)
+    -- for shotgun damage do NOT include dodge nor cover
+    LOGGER:trace("Shotgun dmg=" ..
+      enemy_data:weapon_chance_to_hit() .. "*" .. enemy_data.accuracy .. "*" .. enemy_data.damage)
+    enemy_data.damage = math.ceil(enemy_data:weapon_chance_to_hit() * (enemy_data.accuracy / 100) * enemy_data.damage)
+    LOGGER:debug("Shotgun dmg=" .. enemy_data.damage)
+  end,
 }

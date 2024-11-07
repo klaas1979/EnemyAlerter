@@ -1,3 +1,5 @@
+nova.require "logger"
+
 INFO_ALERT = {
   id = 7903,
   analyzer = nil,
@@ -59,57 +61,62 @@ INFO_ALERT = {
     local result = {}
     local has_odd = false
     for i, dmg_odd in pairs(self.analyzer.damage_odds) do
-      if dmg_odd.damage >= health then result.die = dmg_odd end
+      LOGGER:trace("create_content_odds for=" .. dmg_odd.odd .. "%=" .. dmg_odd.damage)
+      if dmg_odd.odd >= 1 and dmg_odd.damage >= health then result.die = dmg_odd end
       if dmg_odd.damage >= (health * 3 / 4) and dmg_odd.damage < health then
         result.health75 = dmg_odd
         has_odd = true
       end
-      if dmg_odd.damage >= (health * 1 / 2) and dmg_odd.damage < (health * 3 / 4) then
+      if dmg_odd.odd >= 1 and dmg_odd.damage >= (health * 1 / 2) and dmg_odd.damage < (health * 3 / 4) then
         result.health50 = dmg_odd
         has_odd = true
       end
-      if dmg_odd.damage >= (health * 1 / 10) and dmg_odd.damage < (health * 1 / 2) then
+      if dmg_odd.odd >= 1 and dmg_odd.damage >= (health * 1 / 4) and dmg_odd.damage < (health * 1 / 2) then
         result.health25 = dmg_odd
         has_odd = true
       end
-      if dmg_odd.damage >= (health * 1 / 4) and dmg_odd.damage < (health * 1 / 4) then
+      if dmg_odd.odd >= 1 and dmg_odd.damage >= (health * 1 / 10) and dmg_odd.damage < (health * 1 / 4) then
         result.health10 = dmg_odd
         has_odd = true
       end
     end
     if has_odd == false then
-      if #self.analyzer.damage_odds > 0 then
-        result.other = self.analyzer.damage_odds[1]
-      else
-        result.other = { odd = 0, damage = 0 }
-      end
+            if #self.analyzer.damage_odds > 0 then
+                LOGGER:trace("adding odd=" ..
+                self.analyzer.damage_odds[1].odd .. "%=" .. self.analyzer.damage_odds[1].damage)
+                result.other = self.analyzer.damage_odds[1]
+            else
+                LOGGER:trace("no odds adding empty one")
+                result.other = { odd = 0, damage = 0 }
+            end
+        else
     end
     return result
   end,
 
   add_damage_lines = function(self, result, format_function)
-    if result.die and result.die.odd >= 1 then
+    if result.die then
       format_function(self, result.die.odd, result.die.damage, "DIE", "R")
     end
-    if result.health75 and result.health75.odd >= 1 then
+    if result.health75 then
       format_function(self, result.health75.odd, result.health75.damage,
         "3/4", "Y")
     end
-    if result.health50 and result.health50.odd >= 1 then
+    if result.health50 then
       format_function(self, result.health50.odd, result.health50.damage,
         "1/2", "Y")
     end
-    if result.health25 and result.health25.odd >= 1 then
+    if result.health25 then
       format_function(self, result.health25.odd, result.health25.damage,
         "1/4")
     end
-    if result.health10 and result.health10.odd >= 1 then
+    if result.health10 then
       format_function(self, result.health10.odd, result.health10.damage,
         "/10")
     end
     if result.other then
-        format_function(self, result.other.odd, result.other.damage,
-          "Atk")
+      format_function(self, result.other.odd, result.other.damage,
+        "Atk")
     end
   end,
   add_dmg_line_long = function(self, odd, damage, text, color)

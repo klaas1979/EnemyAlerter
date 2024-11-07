@@ -1,8 +1,12 @@
-nova.log("Enemy Alerter loading")
-
 nova.require "analyzer"
 nova.require "info_alert"
+nova.require "logger"
 nova.require "stop_alert"
+
+-- set the logging level
+LOGGER:set_level('error')
+
+LOGGER:info("Enemy Alerter loading")
 
 register_blueprint "enemy_alerter" {
     flags = { EF_NOPICKUP },
@@ -19,13 +23,13 @@ register_blueprint "enemy_alerter" {
         -- store last action type
         on_pre_command = [=[
             function ( self, entity, command, target )
-                --nova.log("on_pre_command last=" .. last_command() .. ", commmand=" .. get_command_name(command))
+                LOGGER:debug("on_pre_command last=" .. STOP_ALERT:last_command() .. ", commmand=" .. STOP_ALERT:get_command_name(command))
                 STOP_ALERT.analyzer = ANALYZER
                 STOP_ALERT:set_last_command(command, target)
                 STOP_ALERT:calculate_rushing()
                 if STOP_ALERT:stop_command() then
                     STOP_ALERT:reset_rushed_cooldown()
-                    nova.log("Stopped command " .. STOP_ALERT:last_command() .. ", ms: " .. ui:get_time_ms())
+                    LOGGER:info("Stopped command " .. STOP_ALERT:last_command() .. ", ms: " .. ui:get_time_ms())
                     STOP_ALERT:show(ANALYZER)
                     return -1
                 end
@@ -44,7 +48,7 @@ end)
 -- nova.require "data/lua/configuration"
 -- nova.require "configuration"
 --[[function read_configuration_test()
-    nova.log("Config " .. tostring(configuration_scheme))
-    nova.log("Tutorial hints " .. tostring(configuration_scheme['general']['tutorial_hints']))
-    nova.log("configuration " .. tostring(configuration['prev_name']))
+    LOGGER:log("Config " .. tostring(configuration_scheme))
+    LOGGER:log("Tutorial hints " .. tostring(configuration_scheme['general']['tutorial_hints']))
+    LOGGER:log("configuration " .. tostring(configuration['prev_name']))
 end]]

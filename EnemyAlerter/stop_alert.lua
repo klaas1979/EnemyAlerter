@@ -45,7 +45,7 @@ STOP_ALERT = {
   end,
 
   get_command_name = function(self, action_id)
-    local result = "unknown command=" .. action_id
+    local result = "unknown command=" .. tostring(action_id)
     if action_id == COMMAND_ACTIVATE then
       result = "activate"
     elseif action_id == COMMAND_DROP then

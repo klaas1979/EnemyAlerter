@@ -1,3 +1,4 @@
+---@diagnostic disable: lowercase-global
 meta = {
     id            = "Enemy Alerter",
     save_version  = 100,

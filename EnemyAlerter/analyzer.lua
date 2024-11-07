@@ -1,3 +1,4 @@
+nova.require "logger"
 nova.require "enemy"
 
 local xps_per_level_needed = {
@@ -47,7 +48,7 @@ ANALYZER = {
             if e.data and e.data.ai then
                 local data = ENEMY:analyze(e)
                 table.insert(self.enemies, data)
-                nova.log("created " .. data:tostring())
+                LOGGER:debug("created " .. data:tostring())
             end
         end
         self:sort()
@@ -60,11 +61,10 @@ ANALYZER = {
         local prev_level = calculate_level(self.prev_xp)
         local current_level = calculate_level(self.current_xp)
         local result = prev_level < current_level
-        --[[nova.log("prev_level=" ..
+        LOGGER:debug("prev_level=" ..
             prev_level .. ", current_level=" .. current_level ..
             ", cxp=" ..
             self.current_xp .. ", difficulty=" .. DIFFICULTY .. ", will_level=" .. tostring(result))
-        --]]
         return result
     end,
 
@@ -91,27 +91,22 @@ ANALYZER = {
                 end
             end
         end
-        nova.log("Chances count=" .. #self.chances)
+        LOGGER:debug("Chances count=" .. #self.chances)
     end,
 
     combine = function(self, arr, start, current, result)
-        -- Füge die aktuelle Kombination zur Ergebnis-Tabelle hinzu, wenn sie nicht leer ist
         if #current > 0 then
             ---@diagnostic disable-next-line: deprecated
             table.insert(result, { unpack(current) })
         end
 
         for i = start, #arr do
-            -- Füge das aktuelle Element zur Kombination hinzu
             table.insert(current, arr[i])
-            -- Rekursiver Aufruf für die nächste Position
             self:combine(arr, i + 1, current, result)
-            -- Entferne das letzte Element, um die nächste Kombination zu erstellen
             table.remove(current)
         end
     end,
 
-    -- Funktion zur Initialisierung und Aufruf der Kombinationsfunktion
     generate_permutations = function(self)
         self:combine(self.chances, 1, {}, self.permutations)
     end,
@@ -153,14 +148,14 @@ ANALYZER = {
         end
         self.damage_odds = {}
         for damage, odd in pairs(result) do
-            table.insert(self.damage_odds, { odd = 100 - odd * 100, damage = damage })
+            table.insert(self.damage_odds, { odd = 100 - (odd * 100), damage = damage })
         end
         table.sort(self.damage_odds, function(a, b)
             return a.odd > b.odd
         end)
-        --[[for _, p in pairs(self.damage_odds) do
-            nova.log(string.format("%.f%%=%i", p.odd, p.damage))
+        LOGGER:debug("Created " .. #self.damage_odds .. " odds")
+        for _, p in pairs(self.damage_odds) do
+            LOGGER:trace(string.format("odd %.f%%=%i dmg", p.odd, p.damage))
         end
-        --]]
     end,
 }
