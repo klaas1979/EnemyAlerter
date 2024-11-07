@@ -5,10 +5,10 @@ nova.require "info_alert"
 nova.require "stop_alert"
 
 register_blueprint "enemy_alerter" {
-    flags = {EF_NOPICKUP},
+    flags = { EF_NOPICKUP },
     callbacks = {
         on_action = [=[
-            function ( self, entity )
+            function (self, entity)
                 ANALYZER:store_health(entity)
                 ANALYZER:initialize()
                 INFO_ALERT.analyzer = ANALYZER
@@ -29,12 +29,6 @@ register_blueprint "enemy_alerter" {
                     STOP_ALERT:show(ANALYZER)
                     return -1
                 end
-            end
-        ]=],
-
-        on_post_command = [=[
-            function ( self, actor, command, target, time )
-                ui:alert_clear(1)
             end
         ]=],
     }

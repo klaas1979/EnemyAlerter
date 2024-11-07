@@ -1,16 +1,19 @@
 INFO_ALERT = {
+  id = 7903,
   analyzer = nil,
   rounds_shown = 0,
   size_x = 0,
-  long_title = "",
-  long_content = "",
+
+  clear = function(self)
+    ui:alert_clear(self.id)
+  end,
 
   show = function(self)
-    ui:alert_clear(1)
+    self:clear()
     self.title = ""
     self.content = ""
 
-    if self.analyzer:visible_enemies() > 0 then
+    if self.analyzer:will_level_up() == false and self.analyzer:visible_enemies() > 0 then
       local result = self:create_content_odds()
       if self.rounds_shown <= 3 then
         self:create_long_title()
@@ -21,7 +24,7 @@ INFO_ALERT = {
       end
       self:set_shown_alert()
       ui:alert {
-        id = 1,
+        id = self.id,
         title = self.title,
         teletype = 0,
         content = self.content,
@@ -54,13 +57,32 @@ INFO_ALERT = {
   create_content_odds = function(self)
     local health = self.analyzer.health_current
     local result = {}
-
+    local has_odd = false
     for i, dmg_odd in pairs(self.analyzer.damage_odds) do
       if dmg_odd.damage >= health then result.die = dmg_odd end
-      if dmg_odd.damage >= (health * 3 / 4) and dmg_odd.damage < health then result.health75 = dmg_odd end
-      if dmg_odd.damage >= (health * 1 / 2) and dmg_odd.damage < (health * 3 / 4) then result.health50 = dmg_odd end
-      if dmg_odd.damage >= (health * 1 / 10) and dmg_odd.damage < (health * 1 / 2) then result.health25 = dmg_odd end
-      if dmg_odd.damage >= (health * 1 / 4) and dmg_odd.damage < (health * 1 / 4) then result.health10 = dmg_odd end
+      if dmg_odd.damage >= (health * 3 / 4) and dmg_odd.damage < health then
+        result.health75 = dmg_odd
+        has_odd = true
+      end
+      if dmg_odd.damage >= (health * 1 / 2) and dmg_odd.damage < (health * 3 / 4) then
+        result.health50 = dmg_odd
+        has_odd = true
+      end
+      if dmg_odd.damage >= (health * 1 / 10) and dmg_odd.damage < (health * 1 / 2) then
+        result.health25 = dmg_odd
+        has_odd = true
+      end
+      if dmg_odd.damage >= (health * 1 / 4) and dmg_odd.damage < (health * 1 / 4) then
+        result.health10 = dmg_odd
+        has_odd = true
+      end
+    end
+    if has_odd == false then
+      if #self.analyzer.damage_odds > 0 then
+        result.other = self.analyzer.damage_odds[1]
+      else
+        result.other = { odd = 0, damage = 0 }
+      end
     end
     return result
   end,
@@ -84,6 +106,10 @@ INFO_ALERT = {
     if result.health10 and result.health10.odd >= 1 then
       format_function(self, result.health10.odd, result.health10.damage,
         "/10")
+    end
+    if result.other then
+        format_function(self, result.other.odd, result.other.damage,
+          "Atk")
     end
   end,
   add_dmg_line_long = function(self, odd, damage, text, color)
@@ -133,7 +159,7 @@ INFO_ALERT = {
     end
   end,
 
-    calculate_size_x = function(self, line)
+  calculate_size_x = function(self, line)
     self.size_x = math.max(line:len() + 4, self.size_x)
   end,
 

@@ -1,0 +1,22 @@
+"workshopitem"
+{
+	"appid"		"811320"
+	"publishedfileid"		"3354490087"
+	"contentfolder"		"/Users/klaas/JupiterHell_mods/EnemyAlerter/EnemyAlerter"
+	"previewfile"		"/Users/klaas/JupiterHell_mods/EnemyAlerter/steam-workshop/JH-stop-rushing-1-enemy.jpg"
+	"visibility"		"0"
+	"title"		"Enemy Alerter"
+	"description"		"Helper that shows an info alerts about number of visible enemies and their chances to hit and kill you.
+	Chances are sorted by damage categories to give a quick indication about the danger.
+	Die=you die if hit, 3/4 or more of remaining health, 1/2 or more=of remaining health 1/4 or mor eof remaining health or 1/10 or more of remaining health. Atk Atk chance and damage.
+
+	The plugin is very useful for people moving to fast and being shot at. It helps a lot on the steam deck where enemies are sometimes hard to make out.
+
+	The algorithm to calculate the chance to hit (CTH) is derived from the 'Jupiter Hell guide - (updated: September 2022 - Sylph)', the help documentation and the Jupither Hell Fandom WIKI.
+	It calculates the CTH of each shot for the weapon range, then multiplies it with the cover, the cover mod and the dodge value, adding the accuracy of the enemy to this value. Shotguns
+	have a CTH of 100% and the damage is reduced by distance, cover and dodge. The odds are then a calculation of of combiniations of those CTH. No guarantee for correctness.
+	
+	TODO:
+	At the moment the damage modifier of the enemy listed is NOT taken into account."
+	"changenote"		"Version 0.6 - first alpha should be safe enough to try out"
+}

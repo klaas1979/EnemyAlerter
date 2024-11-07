@@ -1,5 +1,26 @@
 nova.require "enemy"
 
+local xps_per_level_needed = {
+    {200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2400, 2600, 2800, 3000, 3200, 3400, 3600, 3800},
+    {220, 440, 660, 880, 1100, 1320, 1540, 1760, 1980, 2200, 2420, 2640, 2860, 3080, 3300, 3520, 3740, 3960, 4180},
+    {300, 600, 900, 1200, 1500, 1800, 2100, 2400, 2700, 3000, 3300, 3600, 3900, 4200, 4500, 4800, 5100, 5400, 5700},
+    {400, 800, 1200, 1600, 2000, 2400, 2800, 3200, 3600, 4000, 4400, 4800, 5200, 5600, 6000, 6400, 6800, 7200, 7600}
+}
+local function calculate_level(experience)
+    local difficulty_index = DIFFICULTY + 1
+    local levels = #xps_per_level_needed[difficulty_index]
+    local total_xp = 0
+
+    for level = 1, levels do
+        total_xp = total_xp + xps_per_level_needed[difficulty_index][level]
+        if experience < total_xp then
+            return level
+        end
+    end
+
+    return levels + 1
+end
+
 ANALYZER = {
     health_current = 100,
     health_before = 100,
@@ -7,6 +28,8 @@ ANALYZER = {
     prev_enemies = {},
     chances = {},
     permutations = {},
+    prev_xp = 0,
+    current_xp = 0,
 
     initialize = function(self)
         self.prev_enemies = self.enemies
@@ -14,10 +37,13 @@ ANALYZER = {
         self.chances = {}
         self.permutations = {}
         self.damage_odds = {}
+        self.prev_xp = self.current_xp
+        local player = world:get_player()
+        self.current_xp = player.progression.experience
         ENEMY:initialize()
 
         ---@diagnostic disable-next-line: undefined-field
-        for e in ENEMY.level:targets(ENEMY.player, 14) do
+        for e in ENEMY.level:targets(player, 14) do
             if e.data and e.data.ai then
                 local data = ENEMY:analyze(e)
                 table.insert(self.enemies, data)
@@ -28,6 +54,18 @@ ANALYZER = {
         self:create_chances()
         self:generate_permutations()
         self:calculate_odds()
+    end,
+
+    will_level_up = function(self)
+        local prev_level = calculate_level(self.prev_xp)
+        local current_level = calculate_level(self.current_xp)
+        local result = prev_level < current_level
+        --[[nova.log("prev_level=" ..
+            prev_level .. ", current_level=" .. current_level ..
+            ", cxp=" ..
+            self.current_xp .. ", difficulty=" .. DIFFICULTY .. ", will_level=" .. tostring(result))
+        --]]
+        return result
     end,
 
     store_health = function(self, player)

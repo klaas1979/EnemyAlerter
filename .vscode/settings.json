@@ -19,6 +19,7 @@
     "register_blueprint",
     "EF_NOPICKUP",
     "level",
-    "ivec2"
+    "ivec2",
+    "DIFFICULTY"
   ]
 }
