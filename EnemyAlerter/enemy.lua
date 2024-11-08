@@ -17,7 +17,9 @@ ENEMY = {
 
   create_data = function(self)
     return {
-      damage = 0,
+      id = nil,
+      weapon_damage = 0,
+      damage = 0, -- calculated=weapon_damage * damage_mult
       shots = 0,
       is_shotgun = false,
       distance = nil,
@@ -25,6 +27,8 @@ ENEMY = {
       opt_distance = 1,
       max_distance = 1,
       weapon_accuracy = 0,
+      damage_mult = 0,
+
       cover = 0,
       accuracy = 100,
       chance_to_hit = 100,
@@ -38,7 +42,7 @@ ENEMY = {
           local wa = weapon.attributes
           if wa then
             if wa.damage then
-              self.damage = wa.damage
+              self.weapon_damage = wa.damage
             end
             if wa.shots then
               self.shots = wa.shots
@@ -73,16 +77,18 @@ ENEMY = {
 
       ---@diagnostic disable-next-line: redefined-local
       tostring = function(self)
-        return string.format("dmg=%ix%i cth=%.f%% dst=%.1f rng=%i/%i/%i, cov=%.2f, shotgun=%s", self.damage or 0,
-          self.shots or 1,
+        return string.format(
+          "wpn_dxs=%ix%i dmg_mult=%.2f calc_dmg=%i cth=%.f%% dst=%.1f rng=%i/%i/%i, cov=%.2f, shotgun=%s",
+          self.weapon_damage or 0, self.shots or 1, self.damage_mult or 1, self.damage or 0,
           self.chance_to_hit or 100, self.distance or 1, self.min_distance or 0, self.opt_distance or 1,
           self.max_distance or 1, self.cover or 0, tostring(self.is_shotgun))
-      end
+      end,
     }
   end,
 
   analyze = function(self, enemy)
     local enemy_data = self:create_data()
+    enemy_data.id = tostring(enemy)
     local weapon = enemy:get_weapon()
     enemy_data:set_weapon(weapon)
     enemy_data.distance = self.level:distance(self.player, enemy)
@@ -91,6 +97,8 @@ ENEMY = {
     if enemy.attributes.accuracy then
       enemy_data.accuracy = 100 + enemy.attributes.accuracy
     end
+    enemy_data.damage_mult = enemy.attributes.damage_mult or 1
+    enemy_data.damage = math.floor((enemy_data.weapon_damage * enemy_data.damage_mult) + 0.5) -- round number
     if enemy_data.is_shotgun then
       self:shotgun_damage(enemy_data)
     else
@@ -115,16 +123,19 @@ ENEMY = {
       wcth ..
       ", eacc=" ..
       enemy_data.accuracy ..
-      ", cover=" .. enemy_data.cover .. ", cover_mod=" .. self.player_cover_mod .. ", evasion=" .. self.player_evasion
-      .. ", weap_acc=" .. tostring(enemy_data.weapon_accuracy))
+      ", p_cover=" ..
+      enemy_data.cover .. ", p_cover_mod=" .. self.player_cover_mod .. ", p_evasion=" .. self.player_evasion
+      .. ", e_weap_acc=" .. tostring(enemy_data.weapon_accuracy))
     enemy_data.chance_to_hit = final_accuracy
   end,
 
   shotgun_damage = function(self, enemy_data)
     -- for shotgun damage do NOT include dodge nor cover
     LOGGER:trace("Shotgun dmg=" ..
-      enemy_data:weapon_chance_to_hit() .. "*" .. enemy_data.accuracy .. "*" .. enemy_data.damage)
-    enemy_data.damage = math.ceil(enemy_data:weapon_chance_to_hit() * (enemy_data.accuracy / 100) * enemy_data.damage)
+      enemy_data:weapon_chance_to_hit() .. "*" .. enemy_data.damage)
+    -- as of testing the accuracy of enemy is NOT taken into account, only the distance accuracy calculation as modifier!!
+    -- as of testing it seems that the calcuation is rounded down
+    enemy_data.damage = math.floor(enemy_data:weapon_chance_to_hit() * enemy_data.damage)
     LOGGER:debug("Shotgun dmg=" .. enemy_data.damage)
   end,
 }

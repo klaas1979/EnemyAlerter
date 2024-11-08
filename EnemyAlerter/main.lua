@@ -4,9 +4,16 @@ nova.require "logger"
 nova.require "stop_alert"
 
 -- set the logging level
-LOGGER:set_level('error')
+LOGGER:set_level('info')
 
 LOGGER:info("Enemy Alerter loading")
+
+--[[
+TODOs
+Check if this is a problem:
+you should also remove the box on any ui:terminal calls, because it's not just the level up dialog that freezes with the modal=false alert
+also probably ui:confirm, can't recall
+--]]
 
 register_blueprint "enemy_alerter" {
     flags = { EF_NOPICKUP },
@@ -30,8 +37,22 @@ register_blueprint "enemy_alerter" {
                 if STOP_ALERT:stop_command() then
                     STOP_ALERT:reset_rushed_cooldown()
                     LOGGER:info("Stopped command " .. STOP_ALERT:last_command() .. ", ms: " .. ui:get_time_ms())
-                    STOP_ALERT:show(ANALYZER)
+                    STOP_ALERT:show()
                     return -1
+                end
+            end
+        ]=],
+
+        -- purely used for logging and comparing received dmg with calculated ones
+        on_receive_damage = [=[
+            function ( self, entity, source, weapon, amount )
+                local found_enemy_data = ANALYZER:find_enemy(source)
+                if found_enemy_data then
+                    if not found_enemy_data.damage == amount then
+                        LOGGER:warn(string.format("Enemy dealt %idmg calc %idmg, enemy data: %s", amount, found_enemy_data.damage, found_enemy_data:tostring()))
+                    else
+                        LOGGER:debug(string.format("Dealt %idmg == calc %idmg", amount, found_enemy_data.damage))
+                    end
                 end
             end
         ]=],

@@ -18,5 +18,5 @@
 	
 	TODO:
 	At the moment the damage modifier of the enemy listed is NOT taken into account."
-	"changenote"		"Version 0.7 - fixed a bug in /10 and 1/4 display of CTH and damage"
+	"changenote"		"Version 0.8 - add damage modification from enemies, fixed shotgun damage only taken range and damage modification into account NOT enmies accuracy"
 }

@@ -123,6 +123,13 @@ ANALYZER = {
         return count
     end,
 
+    find_enemy = function(self, enemy)
+        local search_id = tostring(enemy)
+        for _, e in pairs(self.enemies) do
+            if e.id == search_id then return e end
+        end
+    end,
+
     calculate_odds = function(self)
         local result = {}
         for _, p in pairs(self.permutations) do
