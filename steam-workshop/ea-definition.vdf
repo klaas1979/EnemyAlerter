@@ -16,7 +16,10 @@
 	It calculates the CTH of each shot for the weapon range, then multiplies it with the cover, the cover mod and the dodge value, adding the accuracy of the enemy to this value. Shotguns
 	have a CTH of 100% and the damage is reduced by distance, cover and dodge. The odds are then a calculation of of combiniations of those CTH. No guarantee for correctness.
 	
+	Confirmation dialog to move onto a flaming tile.
+
 	TODO:
-	At the moment the damage modifier of the enemy listed is NOT taken into account."
-	"changenote"		"Version 0.8 - add damage modification from enemies, fixed shotgun damage only taken range and damage modification into account NOT enmies accuracy"
+	- At the moment no armor is taken into account
+	- crit chances and damage is not taken into account"
+	"changenote"		"Version 0.9 - add move into flames confirmation dialog"
 }

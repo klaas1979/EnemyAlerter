@@ -130,7 +130,7 @@ STOP_ALERT = {
   will_move_into_flames = function(self)
     LOGGER:trace("will_move_into_flames")
     local result = false
-    if self:last_command_moved() then
+    if self.config.warn_flaming_movement and self:last_command_moved() then
       local level = world:get_level()
       local player_pos = world:get_position(world:get_player())
       local direction = self:last_command()
@@ -149,7 +149,7 @@ STOP_ALERT = {
       local permaflames = level:get_entity(target_pos, "permaflames")
       result = (flames or permaflames) ~= nil
       LOGGER:debug("result=" ..
-      tostring(result) .. ", flames=" .. tostring(flames) .. ", permaflames=" .. tostring(permaflames))
+        tostring(result) .. ", flames=" .. tostring(flames) .. ", permaflames=" .. tostring(permaflames))
     end
     return result
   end,

@@ -3,6 +3,7 @@ nova.require "logger"
 CONFIG = {
   show_enemy_cth = true,
   show_rushing_alert = true,
+  warn_flaming_movement = true,
   ea_trait_to_reattach = nil,
 }
 
@@ -10,6 +11,7 @@ EA_SETTINGS_INFO_SCREEN = {
   {
     name = '{RDisable} Info Alert for Enemy danger',
     id = "show_cth_no",
+    desc = "Disable the info notification PDA with the odds to be hit.",
     activate_option = function(self, ea_trait, entity, id)
       LOGGER:debug("CONFIG.show_enemy_cth = false")
       CONFIG.show_enemy_cth = false
@@ -19,6 +21,7 @@ EA_SETTINGS_INFO_SCREEN = {
   {
     name = '{YEnable} Info Alert for Enemy danger',
     id = "show_cth_yes",
+    desc = "Enable the info notification PDA with the odds to be hit.",
     activate_option = function(self, ea_trait, entity, id)
       LOGGER:debug("CONFIG.show_enemy_cth = true")
       CONFIG.show_enemy_cth = true
@@ -39,6 +42,7 @@ EA_SETTINGS_RUSHING_ALERT = {
   {
     name = '{RDisable} Rushing Alert',
     id = "show_rushing_no",
+    desc = "Disable the rushed into enemy alert.",
     activate_option = function(self, ea_trait, entity, id)
       LOGGER:debug("CONFIG.show_rushing_alert = false")
       CONFIG.show_rushing_alert = false
@@ -48,6 +52,7 @@ EA_SETTINGS_RUSHING_ALERT = {
   {
     name = '{YEnable} Rushing Alert',
     id = "show_rushing_yes",
+    desc = "Enable the rushed into enemy alert.",
     activate_option = function(self, ea_trait, entity, id)
       LOGGER:debug("CONFIG.show_rushing_alert = true")
       CONFIG.show_rushing_alert = true
@@ -57,6 +62,37 @@ EA_SETTINGS_RUSHING_ALERT = {
   {
     name = "Return",
     id = "enemy_rushing_cancel",
+    desc = "Safely stop configuration",
+    cancel = true,
+    activate_option = function(self, ea_trait, entity, id)
+      EA_TERMINAL:show(ea_trait, entity, EA_SETTINGS)
+    end,
+  },
+}
+EA_SETTINGS_FLAMING_ALERT = {
+  {
+    name = '{RDisable} warn before moving to flaming tiles',
+    id = "warn_flaming_no",
+    desc = "Disable the confirmation dialog before moving onto flaming tiles.",
+    activate_option = function(self, ea_trait, entity, id)
+      LOGGER:debug("CONFIG.warn_flaming_movement = false")
+      CONFIG.warn_flaming_movement = false
+      EA_TERMINAL:show(ea_trait, entity, EA_SETTINGS)
+    end
+  },
+  {
+    name = '{YEnable} warn before moving to flaming tiles',
+    id = "warn_flaming_yes",
+    desc = "Enable the confirmation dialog before moving onto flaming tiles.",
+    activate_option = function(self, ea_trait, entity, id)
+      LOGGER:debug("CONFIG.warn_flaming_movement = true")
+      CONFIG.warn_flaming_movement = true
+      EA_TERMINAL:show(ea_trait, entity, EA_SETTINGS)
+    end
+  },
+  {
+    name = "Return",
+    id = "flaming_tile_cancel",
     desc = "Safely stop configuration",
     cancel = true,
     activate_option = function(self, ea_trait, entity, id)
@@ -120,7 +156,16 @@ EA_SETTINGS = {
       EA_TERMINAL:show(ea_trait, entity, EA_SETTINGS_RUSHING_ALERT)
     end,
   },
-  -- Configuration for stop alert on rushing
+  -- Configuration for move into flaming tiles alert
+  {
+    name = "Flaming tile alert",
+    id = "flaming_alert_config",
+    desc = "Configure the warning before moving into flaming tiles",
+    activate_option = function(self, ea_trait, entity, id)
+      EA_TERMINAL:show(ea_trait, entity, EA_SETTINGS_FLAMING_ALERT)
+    end,
+  },
+  -- Configuration for removing skill to only configure via terminals
   {
     name = "Add/Remove configuration skill",
     id = "change_skill",
@@ -145,12 +190,20 @@ EA_TERMINAL = {
     LOGGER:trace("EA_TERMINAL:show(" ..
       tostring(self) .. ", " .. tostring(config) .. ", " .. tostring(entity) .. ", " .. tostring(options) .. ")")
     local terminal_list = {
-      title = 'Configure Enemy Alerter - HelloS 0.7',
+      title = 'Configure Enemy Alerter - HellOS 0.9',
       size  = coord(50, 0),
     }
     for i, option in pairs(options) do
-      terminal_list[i] = { name = option.name, id = option.id, target = config, cancel = option.cancel or false }
+      terminal_list[i] = {
+        name = option.name,
+        desc = option.desc,
+        id = option.id,
+        target = config,
+        cancel = option
+            .cancel or false
+      }
     end
+    terminal_list.fsize = 4
 
     ui:terminal(entity, config, terminal_list)
     LOGGER:trace("EA_TERMINAL:show end")
@@ -161,6 +214,7 @@ EA_TERMINAL = {
     self:activate_option_list(config, entity, id, EA_SETTINGS)
     self:activate_option_list(config, entity, id, EA_SETTINGS_INFO_SCREEN)
     self:activate_option_list(config, entity, id, EA_SETTINGS_RUSHING_ALERT)
+    self:activate_option_list(config, entity, id, EA_SETTINGS_FLAMING_ALERT)
     self:activate_option_list(config, entity, id, EA_SETTINGS_DETACH_SKILL)
   end,
 
