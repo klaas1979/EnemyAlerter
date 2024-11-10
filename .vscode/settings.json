@@ -20,6 +20,7 @@
     "EF_NOPICKUP",
     "level",
     "ivec2",
-    "DIFFICULTY"
+    "DIFFICULTY",
+    "coord"
   ]
 }

@@ -1,10 +1,11 @@
 nova.require "analyzer"
+nova.require "config"
 nova.require "info_alert"
 nova.require "logger"
 nova.require "stop_alert"
 
 -- set the logging level
-LOGGER:set_level('info')
+LOGGER:set_level('trace')
 
 LOGGER:info("Enemy Alerter loading")
 
@@ -20,19 +21,25 @@ register_blueprint "enemy_alerter" {
     callbacks = {
         on_action = [=[
             function (self, entity)
+                LOGGER:trace("on_action")
                 ANALYZER:store_health(entity)
                 ANALYZER:initialize()
                 INFO_ALERT.analyzer = ANALYZER
+                INFO_ALERT.config = CONFIG
                 INFO_ALERT:show()
+                LOGGER:trace("on_action end")
             end
         ]=],
 
         -- store last action type
         on_pre_command = [=[
             function ( self, entity, command, target )
-                LOGGER:debug("on_pre_command last=" .. STOP_ALERT:last_command() .. ", commmand=" .. STOP_ALERT:get_command_name(command))
+                LOGGER:trace("on_pre_command last=" .. STOP_ALERT:last_command() .. ", commmand=" .. STOP_ALERT:get_command_name(command))
                 STOP_ALERT.analyzer = ANALYZER
+                STOP_ALERT.config = CONFIG
                 STOP_ALERT:set_last_command(command, target)
+                -- clear ui:alert as it crashes the game if ui:terminal or another ui:function is called
+                if STOP_ALERT:last_command_use() then INFO_ALERT:clear() end
                 STOP_ALERT:calculate_rushing()
                 if STOP_ALERT:stop_command() then
                     STOP_ALERT:reset_rushed_cooldown()
@@ -40,8 +47,25 @@ register_blueprint "enemy_alerter" {
                     STOP_ALERT:show()
                     return -1
                 end
+                LOGGER:trace("on_pre_command end")
             end
         ]=],
+
+        on_station_activate = [=[
+            function(self,who,what)
+                LOGGER:trace("on_station_activate")
+                -- clear ui:alert as it crashes the game if ui:terminal or another ui:function is called
+                INFO_ALERT:clear()
+            end
+        ]=],
+
+        on_terminal_activate = [=[
+			function(self,who,what)
+                LOGGER:trace("on_terminal_activate")
+                -- clear ui:alert as it crashes the game if ui:terminal or another ui:function is called
+			    INFO_ALERT:clear()
+			end
+		]=],
 
         -- purely used for logging and comparing received dmg with calculated ones
         on_receive_damage = [=[
@@ -56,6 +80,17 @@ register_blueprint "enemy_alerter" {
                 end
             end
         ]=],
+        on_enter_level = [=[
+			function ( self, entity, reenter )
+                if reenter then return end
+                local level = world:get_level()
+                for e in level:entities() do
+                if world:get_id( e ) == "terminal" then
+                    e:attach( "enemy_alerter_terminal" )
+                end
+                end
+			end	
+		]=],
     }
 }
 

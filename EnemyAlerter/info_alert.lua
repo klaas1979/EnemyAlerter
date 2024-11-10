@@ -3,6 +3,7 @@ nova.require "logger"
 INFO_ALERT = {
   id = 7903,
   analyzer = nil,
+  config = nil,
   rounds_shown = 0,
   size_x = 0,
 
@@ -15,7 +16,7 @@ INFO_ALERT = {
     self.title = ""
     self.content = ""
 
-    if self.analyzer:will_level_up() == false and self.analyzer:visible_enemies() > 0 then
+    if self.config.show_enemy_cth and self.analyzer:will_level_up() == false and self.analyzer:visible_enemies() > 0 then
       local result = self:create_content_odds()
       if self.rounds_shown <= 3 then
         self:create_long_title()
@@ -81,15 +82,15 @@ INFO_ALERT = {
       end
     end
     if has_odd == false then
-            if #self.analyzer.damage_odds > 0 then
-                LOGGER:trace("adding odd=" ..
-                self.analyzer.damage_odds[1].odd .. "%=" .. self.analyzer.damage_odds[1].damage)
-                result.other = self.analyzer.damage_odds[1]
-            else
-                LOGGER:trace("no odds adding empty one")
-                result.other = { odd = 0, damage = 0 }
-            end
-        else
+      if #self.analyzer.damage_odds > 0 then
+        LOGGER:trace("adding odd=" ..
+          self.analyzer.damage_odds[1].odd .. "%=" .. self.analyzer.damage_odds[1].damage)
+        result.other = self.analyzer.damage_odds[1]
+      else
+        LOGGER:trace("no odds adding empty one")
+        result.other = { odd = 0, damage = 0 }
+      end
+    else
     end
     return result
   end,
