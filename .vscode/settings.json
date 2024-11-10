@@ -21,6 +21,8 @@
     "level",
     "ivec2",
     "DIFFICULTY",
-    "coord"
+    "coord",
+    "EF_NOMOVE",
+    "gtk"
   ]
 }

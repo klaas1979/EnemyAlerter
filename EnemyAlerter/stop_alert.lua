@@ -81,8 +81,8 @@ STOP_ALERT = {
     else
       return false
     end
-    end,
-  
+  end,
+
   last_command_use = function(self)
     LOGGER:trace("last_command_use")
     if self.command and self.command == COMMAND_USE then
@@ -124,6 +124,33 @@ STOP_ALERT = {
       result = true
     end
     LOGGER:trace("stop_command end, will return=" .. tostring(result))
+    return result
+  end,
+
+  will_move_into_flames = function(self)
+    LOGGER:trace("will_move_into_flames")
+    local result = false
+    if self:last_command_moved() then
+      local level = world:get_level()
+      local player_pos = world:get_position(world:get_player())
+      local direction = self:last_command()
+      local move_coords = nil
+      if "move_n" == direction then
+        move_coords = coord(0, 1)
+      elseif "move_s" == direction then
+        move_coords = coord(0, -1)
+      elseif "move_e" == direction then
+        move_coords = coord(1, 0)
+      elseif "move_w" == direction then
+        move_coords = coord(-1, 0)
+      end
+      local target_pos = player_pos + move_coords
+      local flames = level:get_entity(target_pos, "flames")
+      local permaflames = level:get_entity(target_pos, "permaflames")
+      result = (flames or permaflames) ~= nil
+      LOGGER:debug("result=" ..
+      tostring(result) .. ", flames=" .. tostring(flames) .. ", permaflames=" .. tostring(permaflames))
+    end
     return result
   end,
 

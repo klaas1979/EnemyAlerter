@@ -33,8 +33,8 @@ register_blueprint "enemy_alerter" {
 
         -- store last action type
         on_pre_command = [=[
-            function ( self, entity, command, target )
-                LOGGER:trace("on_pre_command last=" .. STOP_ALERT:last_command() .. ", commmand=" .. STOP_ALERT:get_command_name(command))
+            function ( self, entity, command, target, position, time_confirm )
+                LOGGER:trace("on_pre_command last=" .. STOP_ALERT:last_command() .. ", commmand=" .. STOP_ALERT:get_command_name(command) .. ", pos=" .. tostring(position) .. ", time_confirm=" .. time_confirm)
                 STOP_ALERT.analyzer = ANALYZER
                 STOP_ALERT.config = CONFIG
                 STOP_ALERT:set_last_command(command, target)
@@ -44,10 +44,28 @@ register_blueprint "enemy_alerter" {
                 if STOP_ALERT:stop_command() then
                     STOP_ALERT:reset_rushed_cooldown()
                     LOGGER:info("Stopped command " .. STOP_ALERT:last_command() .. ", ms: " .. ui:get_time_ms())
+                    world:play_voice( "vo_refuse" ) -- refuse the action verbally
                     STOP_ALERT:show()
                     return -1
                 end
+                if STOP_ALERT:will_move_into_flames() then
+                    if time_confirm > 0 then
+                        LOGGER:info("Command confirmed=" .. STOP_ALERT:last_command() .. ", ms: " .. ui:get_time_ms())
+                        return 0
+                    else
+                        ui:confirm {
+                            size    = ivec2( 23, 8 ),
+                            content = " Move into flames? ",
+                            actor   = entity,
+                            command = command,
+                        }
+                        LOGGER:info("Stopped command " .. STOP_ALERT:last_command() .. ", ms: " .. ui:get_time_ms())
+                        world:play_voice( "vo_refuse" ) -- refuse the action verbally
+                        return -1 -- must abort this command, wait for confirm to execute it
+                    end
+                end
                 LOGGER:trace("on_pre_command end")
+                return 0
             end
         ]=],
 

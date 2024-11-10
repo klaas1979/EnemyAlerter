@@ -205,7 +205,7 @@ register_blueprint "trait_enemy_alerter"
   callbacks = {
     on_use = [=[
         function ( self, entity )
-          local config = who:child("enemy_alerter_config")
+          local config = world:get_player():child("enemy_alerter_config")
           EA_TERMINAL:show(config, entity, EA_SETTINGS)
         end
     ]=],
