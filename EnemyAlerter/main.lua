@@ -10,10 +10,13 @@ LOGGER:set_level('trace')
 LOGGER:info("Enemy Alerter loading")
 
 --[[
-TODOs
-Check if this is a problem:
-you should also remove the box on any ui:terminal calls, because it's not just the level up dialog that freezes with the modal=false alert
-also probably ui:confirm, can't recall
+NOTES: game will freeze if the INFO_ALERT is shown and a ui:terminal or another ui:alert is shown
+
+TODOs:
+- check if evasion is calculated correctly taking negative armor modifications into account
+- check fiends and other demons attacks > no attack shown, but ranged attack executed
+- include armor and resistances into damage calculation
+- include round status effects into damage calculation and warnings
 --]]
 
 register_blueprint "enemy_alerter" {
@@ -35,37 +38,28 @@ register_blueprint "enemy_alerter" {
         on_pre_command = [=[
             function ( self, entity, command, target, position, time_confirm )
                 LOGGER:trace("on_pre_command last=" .. STOP_ALERT:last_command() .. ", commmand=" .. STOP_ALERT:get_command_name(command) .. ", pos=" .. tostring(position) .. ", time_confirm=" .. time_confirm)
+                -- set data
                 STOP_ALERT.analyzer = ANALYZER
                 STOP_ALERT.config = CONFIG
                 STOP_ALERT:set_last_command(command, target)
+
                 -- clear ui:alert as it crashes the game if ui:terminal or another ui:function is called
-                if STOP_ALERT:last_command_use() then INFO_ALERT:clear() end
-                STOP_ALERT:calculate_rushing()
-                if STOP_ALERT:stop_command() then
-                    STOP_ALERT:reset_rushed_cooldown()
+                if STOP_ALERT:last_command_use() or STOP_ALERT:last_command_activate() then INFO_ALERT:clear() end
+                
+                -- start checks to be aborted
+                local result = 0
+                -- check if command needs to be prevented
+                -- check rushing
+                result = STOP_ALERT:rushing_check(command, target)
+                if result == 0 then -- only check move into flames if not rushing
+                    result = STOP_ALERT:move_into_flames_check(entity, command, time_confirm)
+                end
+                if result == -1 then -- stop the command and play some audio about it
                     LOGGER:info("Stopped command " .. STOP_ALERT:last_command() .. ", ms: " .. ui:get_time_ms())
-                    world:play_voice( "vo_refuse" ) -- refuse the action verbally
-                    STOP_ALERT:show()
-                    return -1
+                    world:play_voice("vo_refuse")  -- refuse the action verbally
                 end
-                if STOP_ALERT:will_move_into_flames() then
-                    if time_confirm > 0 then
-                        LOGGER:info("Command confirmed=" .. STOP_ALERT:last_command() .. ", ms: " .. ui:get_time_ms())
-                        return 0
-                    else
-                        ui:confirm {
-                            size    = ivec2( 23, 8 ),
-                            content = " Move into flames? ",
-                            actor   = entity,
-                            command = command,
-                        }
-                        LOGGER:info("Stopped command " .. STOP_ALERT:last_command() .. ", ms: " .. ui:get_time_ms())
-                        world:play_voice( "vo_refuse" ) -- refuse the action verbally
-                        return -1 -- must abort this command, wait for confirm to execute it
-                    end
-                end
-                LOGGER:trace("on_pre_command end")
-                return 0
+                LOGGER:trace("on_pre_command returns=" .. result)
+                return result
             end
         ]=],
 

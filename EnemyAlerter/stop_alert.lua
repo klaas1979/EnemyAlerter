@@ -92,6 +92,15 @@ STOP_ALERT = {
     end
   end,
 
+  last_command_activate = function(self)
+    LOGGER:trace("last_command_activate")
+    if self.command and self.command == COMMAND_ACTIVATE then
+      return true
+    else
+      return false
+    end
+  end,
+
   calculate_rushing = function(self)
     LOGGER:trace("calculate_rushing")
     local current_time = ui:get_time_ms()
@@ -127,6 +136,17 @@ STOP_ALERT = {
     return result
   end,
 
+  rushing_check = function(self)
+    local result = 0
+    self:calculate_rushing()
+    if self:stop_command() then
+      self:reset_rushed_cooldown()
+      STOP_ALERT:show()
+      result = -1
+    end
+    return result
+  end,
+
   will_move_into_flames = function(self)
     LOGGER:trace("will_move_into_flames")
     local result = false
@@ -150,6 +170,26 @@ STOP_ALERT = {
       result = (flames or permaflames) ~= nil
       LOGGER:debug("result=" ..
         tostring(result) .. ", flames=" .. tostring(flames) .. ", permaflames=" .. tostring(permaflames))
+    end
+    return result
+  end,
+
+  move_into_flames_check = function(self, entity, command, time_confirm)
+    local result = 0
+    if STOP_ALERT:will_move_into_flames() then
+      if time_confirm == 0 then
+        ui:confirm {
+          size    = ivec2(23, 8),
+          content = " Move into flames? ",
+          actor   = entity,
+          command = command,
+        }
+        result = -1 -- must abort this command, wait for confirm to execute it
+      else
+        result = 0
+        LOGGER:trace("move_into_flames_check Command confirmed=" ..
+          self:last_command() .. ", time_confirm: " .. time_confirm)
+      end
     end
     return result
   end,

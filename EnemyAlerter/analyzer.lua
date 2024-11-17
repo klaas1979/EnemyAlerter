@@ -135,27 +135,31 @@ ANALYZER = {
         for _, p in pairs(self.permutations) do
             local odd = 1.0
             local total_damage = 0
-            for __, d in pairs(p) do
+            -- chance for all hits, chance to hit from each entry multiplied
+            for _, d in pairs(p) do
                 odd = odd * d.chance_to_hit / 100
                 total_damage = total_damage + d.damage
             end
             table.insert(result, { odd = odd, total_damage = total_damage })
         end
         self.permutations = result
+        -- sort by highest damage first
         table.sort(self.permutations, function(a, b)
             return a.total_damage > b.total_damage
         end)
         result = {}
+        -- chance for at least a single hit with given damage = chance to miss multiplied 
         for _, p in pairs(self.permutations) do
             if result[p.total_damage] then
-                result[p.total_damage] = result[p.total_damage] * (1 - p.odd)
+                result[p.total_damage] = 1 - ((1 - result[p.total_damage]) * (1 - p.odd))
             else
-                result[p.total_damage] = 1 - p.odd
+                result[p.total_damage] = p.odd
             end
         end
         self.damage_odds = {}
+        -- create ods table that is in integer as percent
         for damage, odd in pairs(result) do
-            table.insert(self.damage_odds, { odd = 100 - (odd * 100), damage = damage })
+            table.insert(self.damage_odds, { odd = odd * 100, damage = damage })
         end
         table.sort(self.damage_odds, function(a, b)
             return a.odd > b.odd
