@@ -147,36 +147,52 @@ STOP_ALERT = {
     return result
   end,
 
-  will_move_into_flames = function(self)
-    LOGGER:trace("will_move_into_flames")
+  will_move_into = function(self, id1, id2)
+    LOGGER:trace("will_move_into=" .. id1 .. " or=" .. id2)
     local result = false
-    if self.config.warn_flaming_movement and self:last_command_moved() then
+    if self:last_command_moved() then
       local level = world:get_level()
       local player_pos = world:get_position(world:get_player())
       local direction = self:last_command()
       local move_coords = nil
+      -- NOTE: movement is strange DOWN=NORTH following this, left=east, up=south, right=west
+      -- NOTE about coord system: down right corner is 1,1 going up/south means y+1 and going left/east means x+1
       if "move_n" == direction then
-        move_coords = coord(0, 1)
-      elseif "move_s" == direction then
         move_coords = coord(0, -1)
+      elseif "move_s" == direction then
+        move_coords = coord(0, 1)
       elseif "move_e" == direction then
         move_coords = coord(1, 0)
       elseif "move_w" == direction then
         move_coords = coord(-1, 0)
+      else
+        LOGGER:error("will_move_into move detected but no direction, impossible to happen!")
       end
+      local current_id1 = level:get_entity(player_pos, id1)
+      local current_id2 = level:get_entity(player_pos, id2)
       local target_pos = player_pos + move_coords
-      local flames = level:get_entity(target_pos, "flames")
-      local permaflames = level:get_entity(target_pos, "permaflames")
-      result = (flames or permaflames) ~= nil
+      LOGGER:trace("player_pos=" ..
+      tostring(player_pos) .. ", move=" .. direction .. ", move_pos=" .. tostring(target_pos))
+      local target_id1 = level:get_entity(target_pos, id1)
+      local target_id2 = level:get_entity(target_pos, id2)
+      local current_condition = (current_id1 or current_id2) ~= nil
+      local target_condition = (target_id1 or target_id2) ~= nil
+      result = current_condition == false and target_condition == true
       LOGGER:debug("result=" ..
-        tostring(result) .. ", flames=" .. tostring(flames) .. ", permaflames=" .. tostring(permaflames))
+        tostring(result) ..
+        ", c=" ..
+        tostring(current_condition) ..
+        ", t=" ..
+        tostring(target_condition) ..
+        ", t_id1=" .. tostring(target_id1) .. ", t_id2=" .. tostring(target_id2) ..
+        ", c_id1=" .. tostring(current_id1) .. ", c_id2=" .. tostring(current_id2))
     end
     return result
   end,
 
   move_into_flames_check = function(self, entity, command, time_confirm)
     local result = 0
-    if STOP_ALERT:will_move_into_flames() then
+    if self.config.warn_flaming_movement and STOP_ALERT:will_move_into("flames", "permaflames") then
       if time_confirm == 0 then
         ui:confirm {
           size    = ivec2(23, 8),
@@ -188,6 +204,26 @@ STOP_ALERT = {
       else
         result = 0
         LOGGER:trace("move_into_flames_check Command confirmed=" ..
+          self:last_command() .. ", time_confirm: " .. time_confirm)
+      end
+    end
+    return result
+  end,
+
+  move_into_toxic_cloud_check = function(self, entity, command, time_confirm)
+    local result = 0
+    if self.config.warn_toxic_movement and STOP_ALERT:will_move_into("toxic_smoke", "toxic_smoke_cloud") then
+      if time_confirm == 0 then
+        ui:confirm {
+          size    = ivec2(27, 8),
+          content = " Move into toxic smoke? ",
+          actor   = entity,
+          command = command,
+        }
+        result = -1 -- must abort this command, wait for confirm to execute it
+      else
+        result = 0
+        LOGGER:trace("move_into_toxic_cloud_check Command confirmed=" ..
           self:last_command() .. ", time_confirm: " .. time_confirm)
       end
     end

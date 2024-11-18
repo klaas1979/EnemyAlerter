@@ -4,6 +4,7 @@ CONFIG = {
   show_enemy_cth = true,
   show_rushing_alert = true,
   warn_flaming_movement = true,
+  warn_toxic_movement = true,
   ea_trait_to_reattach = nil,
 }
 
@@ -100,6 +101,37 @@ EA_SETTINGS_FLAMING_ALERT = {
     end,
   },
 }
+EA_SETTINGS_TOXIC_ALERT = {
+  {
+    name = '{RDisable} warn before moving into toxic clouds',
+    id = "warn_toxic_no",
+    desc = "Disable the confirmation dialog before moving into toxic clouds.",
+    activate_option = function(self, ea_trait, entity, id)
+      LOGGER:debug("CONFIG.warn_toxic_movement = false")
+      CONFIG.warn_toxic_movement = false
+      EA_TERMINAL:show(ea_trait, entity, EA_SETTINGS)
+    end
+  },
+  {
+    name = '{YEnable} warn before moving into toxic clouds',
+    id = "warn_toxic_yes",
+    desc = "Enable the confirmation dialog before moving into toxic clouds.",
+    activate_option = function(self, ea_trait, entity, id)
+      LOGGER:debug("CONFIG.warn_toxic_movement = true")
+      CONFIG.warn_toxic_movement = true
+      EA_TERMINAL:show(ea_trait, entity, EA_SETTINGS)
+    end
+  },
+  {
+    name = "Return",
+    id = "toxic_cloud_cancel",
+    desc = "Safely stop configuration",
+    cancel = true,
+    activate_option = function(self, ea_trait, entity, id)
+      EA_TERMINAL:show(ea_trait, entity, EA_SETTINGS)
+    end,
+  },
+}
 
 EA_SETTINGS_DETACH_SKILL = {
   {
@@ -165,6 +197,15 @@ EA_SETTINGS = {
       EA_TERMINAL:show(ea_trait, entity, EA_SETTINGS_FLAMING_ALERT)
     end,
   },
+  -- Configuration for move into flaming tiles alert
+  {
+    name = "Toxic cloud alert",
+    id = "toxic_alert_config",
+    desc = "Configure the warning before moving into toxic clouds",
+    activate_option = function(self, ea_trait, entity, id)
+      EA_TERMINAL:show(ea_trait, entity, EA_SETTINGS_TOXIC_ALERT)
+    end,
+  },
   -- Configuration for removing skill to only configure via terminals
   {
     name = "Add/Remove configuration skill",
@@ -215,6 +256,7 @@ EA_TERMINAL = {
     self:activate_option_list(config, entity, id, EA_SETTINGS_INFO_SCREEN)
     self:activate_option_list(config, entity, id, EA_SETTINGS_RUSHING_ALERT)
     self:activate_option_list(config, entity, id, EA_SETTINGS_FLAMING_ALERT)
+    self:activate_option_list(config, entity, id, EA_SETTINGS_TOXIC_ALERT)
     self:activate_option_list(config, entity, id, EA_SETTINGS_DETACH_SKILL)
   end,
 

@@ -54,6 +54,9 @@ register_blueprint "enemy_alerter" {
                 if result == 0 then -- only check move into flames if not rushing
                     result = STOP_ALERT:move_into_flames_check(entity, command, time_confirm)
                 end
+                if result == 0 then -- only check move into toxic if not rushing and no flames
+                    result = STOP_ALERT:move_into_toxic_cloud_check(entity, command, time_confirm)
+                end
                 if result == -1 then -- stop the command and play some audio about it
                     LOGGER:info("Stopped command " .. STOP_ALERT:last_command() .. ", ms: " .. ui:get_time_ms())
                     world:play_voice("vo_refuse")  -- refuse the action verbally

@@ -6,20 +6,24 @@
 	"previewfile"		"/Users/klaas/JupiterHell_mods/EnemyAlerter/steam-workshop/JH-stop-rushing-1-enemy.jpg"
 	"visibility"		"0"
 	"title"		"Enemy Alerter"
-	"description"		"Helper that shows an info alerts about number of visible enemies and their chances to hit and kill you.
+	"description"		"Helper that warns about rushing into enemies and shows an info alerts about number of visible enemies and their chances to hit and kill you.
+	
 	Chances are sorted by damage categories to give a quick indication about the danger.
-	Die=you die if hit, 3/4 or more of remaining health, 1/2 or more=of remaining health, 1/4 or more of remaining health, 1/10 or more of remaining health, Atk=Atk chance and damage.
+	Die=you die if hit, 3/4 or more of remaining health, 1/2 or more of remaining health, 1/4 or more of remaining health, 1/10 or more of remaining health, Atk=Atk chance and damage.
 
-	The plugin is very useful for people moving to fast and being shot at. It helps a lot on the steam deck where enemies are sometimes hard to make out.
+	The plugin is very useful for people moving too fast and being shot at. It helps a lot on the steam deck where enemies are sometimes hard to make out.
 
 	The algorithm to calculate the chance to hit (CTH) is derived from the 'Jupiter Hell guide - (updated: September 2022 - Sylph)', the help documentation and the Jupiter Hell Fandom WIKI.
 	It calculates the CTH of each shot for the weapon range, then multiplies it with the cover, the cover mod and the dodge value, adding the accuracy of the enemy to this value. Shotguns
-	have a CTH of 100% and the damage is reduced by distance and dodge. The odds are then a calculation of of combiniations of those CTH. No guarantee for correctness.
+	have a CTH of 100% and the damage is reduced by distance, no cover or dodge is used. The odds are then a calculation of all combiniations of those CTH. No guarantee for correctness.
 	
-	Confirmation dialog to move onto a flaming tile.
+	Other features:
+	- Confirmation dialog to move onto a flaming tile.
+	- Confirmation dialog to move into a toxic cloud.
 
 	TODO:
-	- At the moment no armor is taken into account
-	- crit chances and damage is not taken into account"
-	"changenote"		"Version 0.10 - fixed a chance to hit calculation error"
+	- take armor into account for damage
+	- take other damage like bleeding, fire and poison into account
+	- calculate crit chances and crit damage for info screen
+	"changenote"		"Version 0.11 - added toxic cloud move confirmation"
 }
