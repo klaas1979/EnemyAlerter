@@ -147,6 +147,18 @@ EA_SETTINGS = {
     end,
   },
 }
+
+-- Centralized table to hold all settings references
+-- new config options need to be added to this table
+local ALL_SETTINGS = {
+  EA_SETTINGS,
+  EA_SETTINGS_INFO_SCREEN,
+  EA_SETTINGS_RUSHING_ALERT,
+  EA_SETTINGS_FLAMING_ALERT,
+  EA_SETTINGS_TOXIC_ALERT,
+  EA_SETTINGS_DETACH_SKILL,
+}
+
 EA_TERMINAL = {
   -- Displays the terminal interface with the provided options.
   -- @param self The terminal instance.
@@ -197,9 +209,7 @@ EA_TERMINAL = {
     LOGGER:trace(string.format("EA_TERMINAL:activate_option called with id: %s", tostring(id)))
 
     -- Iterate over all available settings and activate the matching option
-    for _, settings in pairs({ EA_SETTINGS, EA_SETTINGS_INFO_SCREEN, EA_SETTINGS_RUSHING_ALERT,
-      EA_SETTINGS_FLAMING_ALERT, EA_SETTINGS_TOXIC_ALERT,
-      EA_SETTINGS_DETACH_SKILL }) do
+    for _, settings in pairs(ALL_SETTINGS) do
       self:activate_option_list(config, entity, id, settings)
     end
   end,
