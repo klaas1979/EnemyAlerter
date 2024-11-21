@@ -182,7 +182,7 @@ EA_TERMINAL = {
   -- @return A table representing the terminal list.
   create_terminal_list = function(self, options, config)
     local terminal_list = {
-      title = 'Configure Enemy Alerter - HellOS 0.9',
+      title = 'Configure Enemy Alerter - HellOS v0.12',
       size = coord(50, 0),
       fsize = 4,
     }

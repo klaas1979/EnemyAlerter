@@ -24,6 +24,6 @@
 	TODO:
 	- take armor into account for damage
 	- take other damage like bleeding, fire and poison into account
-	- calculate crit chances and crit damage for info screen
-	"changenote"		"Version 0.11 - added toxic cloud move confirmation"
+	- calculate crit chances and crit damage for info screen"
+	"changenote"		"Version 0.12 - fixed bug in movement alerts flaming and toxic tiles"
 }
