@@ -1,6 +1,29 @@
+nova.require "logger"
+
 -- All credits to https://github.com/cpiod/JH-JoviSec-PDA
 -- refactored into Enemy Alerter to only use a single trait slot for classes like technican that need 3
 LEVELMAP = {}
+
+LEVELMAP.on_enter_level = function(self, entity, reenter)
+    CONFIG.level_enter_dialog_displayed = false
+    if reenter then return end
+    local level = world:get_level()
+    local linfo = level.level_info
+    local episode = linfo.episode
+    local depth = linfo.depth
+    depth = depth - 7 * (episode - 1)
+    if depth == 1 then
+        CONFIG.updated = 0 -- player must use terminal to download the map
+    end
+    -- attach option to download the map to all terminals off level
+    for e in level:entities() do
+        if world:get_id(e) == "terminal" then
+            if depth > 1 and CONFIG.updated == 0 and episode <= 3 then
+                e:attach("event_pda_update")
+            end
+        end
+    end
+end
 
 local function set_branch_name(all_strings, name, xy)
     if name ~= nil then
@@ -27,9 +50,8 @@ end
 
 
 function LEVELMAP.create_map()
-    -- TODO fix this deep link to the skill it is ugly
-    local updated = world:get_player():child("trait_enemy_alerter").attributes.updated
-    local result = "WILL BE DISPLAYED IN UI"
+    local updated = CONFIG.updated
+    local result = ""
     local list = {}
     local strings_3 = {
         "L1                 {!o}\n",
@@ -195,7 +217,6 @@ function LEVELMAP.create_map()
         for j = 1, 15 do
             result = result .. "         " .. all_strings[j]
         end
-        --    iterate over all quest message. check jh.lua, line 1026
     end
     return result
 end

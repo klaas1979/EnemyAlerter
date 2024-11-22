@@ -19,6 +19,42 @@ TODOs:
 - include round status effects into damage calculation and warnings
 --]]
 
+EA_MAIN = {}
+EA_MAIN.on_pre_command = function(self, entity, command, target, position, time_confirm)
+    LOGGER:trace("on_pre_command last=" ..
+        STOP_ALERT:last_command() ..
+        ", commmand=" ..
+        STOP_ALERT:get_command_name(command) .. ", pos=" .. tostring(position) .. ", time_confirm=" .. time_confirm)
+    -- display the configuration once for each level
+    CONFIG:show_config_terminal_on_level_entry(entity)
+
+    -- set data
+    STOP_ALERT.analyzer = ANALYZER
+    STOP_ALERT.config = CONFIG
+    STOP_ALERT:set_last_command(command, target)
+
+    -- clear ui:alert as it crashes the game if ui:terminal or another ui:function is called
+    if STOP_ALERT:last_command_use() or STOP_ALERT:last_command_activate() then INFO_ALERT:clear() end
+
+    -- start checks to be aborted
+    local result = 0
+    -- check if command needs to be prevented
+    -- check rushing
+    result = STOP_ALERT:rushing_check()
+    if result == 0 then -- only check move into flames if not rushing
+        result = STOP_ALERT:move_into_flames_check(entity, command, time_confirm)
+    end
+    if result == 0 then -- only check move into toxic if not rushing and no flames
+        result = STOP_ALERT:move_into_toxic_cloud_check(entity, command, time_confirm)
+    end
+    if result == -1 then              -- stop the command and play some audio about it
+        LOGGER:info("Stopped command " .. STOP_ALERT:last_command() .. ", ms: " .. ui:get_time_ms())
+        world:play_voice("vo_refuse") -- refuse the action verbally
+    end
+    LOGGER:trace("on_pre_command returns=" .. result)
+    return result
+end
+
 register_blueprint "enemy_alerter" {
     flags = { EF_NOPICKUP },
     callbacks = {
@@ -34,36 +70,10 @@ register_blueprint "enemy_alerter" {
             end
         ]=],
 
-        -- store last action type
+        -- store last action type and check if command should be stopped
         on_pre_command = [=[
             function ( self, entity, command, target, position, time_confirm )
-                LOGGER:trace("on_pre_command last=" .. STOP_ALERT:last_command() .. ", commmand=" .. STOP_ALERT:get_command_name(command) .. ", pos=" .. tostring(position) .. ", time_confirm=" .. time_confirm)
-                if target and target.text and target.text.name == "JoviSec PDA" then  end
-                -- set data
-                STOP_ALERT.analyzer = ANALYZER
-                STOP_ALERT.config = CONFIG
-                STOP_ALERT:set_last_command(command, target)
-
-                -- clear ui:alert as it crashes the game if ui:terminal or another ui:function is called
-                if STOP_ALERT:last_command_use() or STOP_ALERT:last_command_activate() then INFO_ALERT:clear() end
-
-                -- start checks to be aborted
-                local result = 0
-                -- check if command needs to be prevented
-                -- check rushing
-                result = STOP_ALERT:rushing_check(command, target)
-                if result == 0 then -- only check move into flames if not rushing
-                    result = STOP_ALERT:move_into_flames_check(entity, command, time_confirm)
-                end
-                if result == 0 then -- only check move into toxic if not rushing and no flames
-                    result = STOP_ALERT:move_into_toxic_cloud_check(entity, command, time_confirm)
-                end
-                if result == -1 then -- stop the command and play some audio about it
-                    LOGGER:info("Stopped command " .. STOP_ALERT:last_command() .. ", ms: " .. ui:get_time_ms())
-                    world:play_voice("vo_refuse")  -- refuse the action verbally
-                end
-                LOGGER:trace("on_pre_command returns=" .. result)
-                return result
+                EA_MAIN.on_pre_command( self, entity, command, target, position, time_confirm )
             end
         ]=],
 
@@ -83,36 +93,19 @@ register_blueprint "enemy_alerter" {
 			end
 		]=],
 
-        -- purely used for logging and comparing received dmg with calculated ones
-        on_receive_damage = [=[
-            function ( self, entity, source, weapon, amount )
-                local found_enemy_data = ANALYZER:find_enemy(source)
-                if found_enemy_data then
-                    if not found_enemy_data.damage == amount then
-                        LOGGER:warn(string.format("Enemy dealt %idmg calc %idmg, enemy data: %s", amount, found_enemy_data.damage, found_enemy_data:tostring()))
-                    else
-                        LOGGER:debug(string.format("Dealt %idmg == calc %idmg", amount, found_enemy_data.damage))
-                    end
-                end
+        on_enter_level = [=[
+            function ( self, entity, reenter )
+                LEVELMAP:on_enter_level(entity, reenter)
+                CONFIG:on_enter_level(reenter)
             end
         ]=],
-        on_enter_level = [=[
-			function ( self, entity, reenter )
-                if reenter then return end
-                local level = world:get_level()
-                for e in level:entities() do
-                if world:get_id( e ) == "terminal" then
-                    e:attach( "enemy_alerter_terminal" )
-                end
-                end
-			end	
-		]=],
     }
 }
 
 world.register_on_entity(function(x)
     if x.data and x.data.ai and x.data.ai.group == "player" then
         x:attach("enemy_alerter")
+        x:attach("enemy_alerter_config")
     end
 end)
 

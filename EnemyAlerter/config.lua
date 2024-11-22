@@ -7,7 +7,10 @@ CONFIG = {
   show_rushing_alert = true,
   warn_flaming_movement = true,
   warn_toxic_movement = true,
+  updated = 0,
+  level_enter_dialog_displayed = false,
 }
+
 -- Helper function to create generic setting
 local function create_setting(name, id, desc, active_option)
   return {
@@ -81,6 +84,33 @@ local EA_SETTINGS_TOXIC_ALERT = {
   create_cancel_option("toxic_cloud_cancel"),
 }
 
+local EA_SETTINGS_DETACH_SKILL = {
+  create_setting('{RDisable} Configuration via trait, use only terminals',
+    "detach_trait",
+    "Remove trait from player, configuration only via terminal",
+    function(self, ea_trait, entity, terminal)
+      LOGGER:debug("Detach configuration trait")
+      local player = world:get_player()
+      local trait = player:child("trait_enemy_alerter")
+      if trait then
+        world:destroy(trait)
+      end
+      terminal:show(ea_trait, entity, EA_SETTINGS)
+    end),
+  create_setting('{YEnable} Configuration via trait',
+    "attach_trait",
+    "Add trait back to player",
+    function(self, ea_trait, entity, terminal)
+      LOGGER:debug("Attach configuration trait")
+      local player = world:get_player()
+      if not player:child("trait_enemy_alerter") then
+        player:attach("trait_enemy_alerter")
+      end
+      terminal:show(ea_trait, entity, EA_SETTINGS)
+    end),
+  create_cancel_option("enemy_rushing_cancel"),
+}
+
 -- Helper function to create a dynamic setting entry with description as function
 local function create_dynamic_setting_entry(name, id, desc, settings_group, cancel)
   return {
@@ -124,6 +154,22 @@ EA_SETTINGS = {
 
   create_dynamic_setting_entry("Log", "action_log", CPIOD_LOG.description, nil, true),
 
+  --[[ Test for trait usage from menu, did not work
+  {
+    name = "Use trait",
+    id = "use_trait",
+    description = function() return "Use trait" end,
+    cancel = false,
+    activate_option = function()
+      local player = world:get_player()
+      local trait = player:child("ktrait_adrenaline")
+      LOGGER:debug("trait=" .. tostring(trait))
+      -- ( self, entity, level, target )
+      world:lua_callback(trait, "on_use", trait, player, world:get_level(), world:get_target(player))
+    end,
+  },
+  --]]
+
   create_static_setting_entry("Enemy info screen", "enemy_info_config",
     "Configure the enemy info screen", EA_SETTINGS_INFO_SCREEN),
 
@@ -135,6 +181,9 @@ EA_SETTINGS = {
 
   create_static_setting_entry("Toxic cloud alert", "toxic_alert_config",
     "Configure the warning before moving into toxic clouds", EA_SETTINGS_TOXIC_ALERT),
+
+  create_static_setting_entry("Add/Remove configuration skill", "change_skill",
+    "Adds or removes the skill for configuration", EA_SETTINGS_DETACH_SKILL),
 
   {
     name = "Close configuration",
@@ -155,6 +204,7 @@ local ALL_SETTINGS = {
   EA_SETTINGS_RUSHING_ALERT,
   EA_SETTINGS_FLAMING_ALERT,
   EA_SETTINGS_TOXIC_ALERT,
+  EA_SETTINGS_DETACH_SKILL,
 }
 
 EA_TERMINAL = {
@@ -231,17 +281,36 @@ EA_TERMINAL = {
   end,
 }
 
+-- Helper to call on level entry to show dialog if trait is not registered
+function CONFIG.show_config_terminal_on_level_entry(self, player)
+  if not CONFIG.level_enter_dialog_displayed and not player:child("trait_enemy_alerter") then
+    local config = player:child("enemy_alerter_config")
+    EA_TERMINAL:show(config, player, EA_SETTINGS)
+  end
+  CONFIG.level_enter_dialog_displayed = true
+end
+
 register_blueprint "enemy_alerter_config" {
   flags = { EF_NOPICKUP },
   callbacks = {
     on_activate = [=[
             function(self, player, level, param, id)
-                LOGGER:trace("enemy_alerter_config > on_activate")
                 EA_TERMINAL:activate_option(self, player, id)
             end
         ]=],
   },
 }
+
+CONFIG.on_enter_level = function(self, reenter)
+  self.level_enter_dialog_displayed = false
+  if reenter then return end
+  local level = world:get_level()
+  for e in level:entities() do
+    if world:get_id(e) == "terminal" then
+      e:attach("enemy_alerter_terminal") -- attach configuration option
+    end
+  end
+end
 
 register_blueprint "trait_enemy_alerter" {
   blueprint = "trait",
@@ -256,36 +325,14 @@ register_blueprint "trait_enemy_alerter" {
     cost = 0,
   },
   attributes = {
-    updated = 0, -- 0 if the player needs to update their map from a terminal, 1 if they have already done so.
   },
   callbacks = {
     on_use = [=[
             function(self, entity)
-                local config = world:get_player():child("enemy_alerter_config")
+                local config = entity:child("enemy_alerter_config")
                 EA_TERMINAL:show(config, entity, EA_SETTINGS)
             end
         ]=],
-    on_enter_level = [=[
-			function ( self, entity, reenter )
-				local linfo = world:get_level().level_info
-				local episode = linfo.episode
-				local depth = linfo.depth
-				depth = depth - 7 * (episode - 1)
-				if depth == 1 then
-					self.attributes.updated = 0
-				end
-				if depth > 1 and self.attributes.updated == 0 and episode <= 3 then
-					if reenter then return end
-					local level = world:get_level()
-					for e in level:entities() do
-						if world:get_id( e ) == "terminal" then
-                            e:attach( "event_pda_update" )
-						end
-					end
-				end
-			end
-					
-		]=], --Resets updated to 0 when the player enters a new moon. Adds the option to update the map to the terminal if not on the first level of a moon and not on Dante.
   },
 }
 
@@ -304,28 +351,17 @@ register_blueprint "event_pda_update"
   },
   callbacks = {
     on_activate = [=[
-		function( self, who, level )
-			local parent  = ecs:parent( self )
-			local trait = who:child("trait_enemy_alerter")
-			trait.attributes.updated = 1
-			ui:set_hint( "{R".."Map downloaded".."}", 1001, 0 )
-			world:destroy( self )
-			ui:activate_terminal( who, parent )
-		end
-		]=] --Changes updated to 1 when the option is selected on a terminal.
+    function( self, who, level )
+      local parent  = ecs:parent( self )
+      CONFIG.updated = 1 -- Map is downloaded
+      ui:set_hint( "{R".."Map downloaded".."}", 1001, 0 )
+      world:destroy( self )
+      ui:activate_terminal( who, parent )
+    end
+    ]=], --Changes updated to 1 when the option is selected on a terminal.
   }
 }
 
-world.register_on_entity(function(x)
-  if x.data and x.data.ai and x.data.ai.group == "player" then
-    x:attach("trait_enemy_alerter")
-    x:attach("enemy_alerter_config")
-  end
-end)
-
-
--- just for reference this is the way to configure via terminal, not used as the mod is integraded with Jovisec PDA
---[[
 register_blueprint "enemy_alerter_terminal" {
   flags = { EF_NOPICKUP },
   text = {
@@ -335,7 +371,7 @@ register_blueprint "enemy_alerter_terminal" {
   },
   data = {
     terminal = {
-      priority = 0,
+      priority = 100,
     },
   },
   callbacks = {
@@ -347,4 +383,3 @@ register_blueprint "enemy_alerter_terminal" {
         ]=],
   }
 }
---]]

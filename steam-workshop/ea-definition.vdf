@@ -19,7 +19,7 @@
 	The algorithm to calculate the chance to hit (CTH) is derived from the 'Jupiter Hell guide - (updated: September 2022 - Sylph)', the help documentation and the Jupiter Hell Fandom WIKI.
 	It calculates the CTH of each shot for the weapon range, then multiplies it with the cover, the cover mod and the dodge value, adding the accuracy of the enemy to this value. Shotguns
 	have a CTH of 100% and the damage is reduced by distance, no cover or dodge is used. The odds are then a calculation of all combiniations of those CTH. No guarantee for correctness.
-	
+
 	Other features:
 	- Confirmation dialog to move onto a flaming tile.
 	- Confirmation dialog to move into a toxic cloud.
@@ -31,5 +31,5 @@
 	- take armor into account for damage
 	- take other damage like bleeding, fire and poison into account
 	- calculate crit chances and crit damage for info screen"
-	"changenote"		"Version 0.13 - Integration with Jovisec PDA to only use a single trait slot"
+	"changenote"		"Version 0.14 - Starts with no skill attached asking about adding it for trait heavy builds"
 }
