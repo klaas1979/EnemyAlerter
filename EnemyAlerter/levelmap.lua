@@ -1,5 +1,3 @@
-nova.require "logger"
-
 -- All credits to https://github.com/cpiod/JH-JoviSec-PDA
 -- refactored into Enemy Alerter to only use a single trait slot for classes like technican that need 3
 LEVELMAP = {}

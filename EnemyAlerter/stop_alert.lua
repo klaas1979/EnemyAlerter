@@ -1,6 +1,4 @@
 STOP_ALERT = {
-  analyzer = nil,
-  config = nil,
   title = "",
   content = "",
   used_weapon = false,
@@ -26,7 +24,7 @@ STOP_ALERT = {
   end,
 
   create_title = function(self)
-    self.title = string.format("{Y%i} %s", self.analyzer:visible_enemies(), "Enemies")
+    self.title = string.format("{Y%i} %s", ANALYZER:visible_enemies(), "Enemies")
   end,
 
   create_content = function(self)
@@ -122,14 +120,14 @@ STOP_ALERT = {
   -- Returns if any stop factors like rushing are active to prevent command execution
   stop_command = function(self)
     LOGGER:trace("stop_command")
-    local rushed_into_enemies = self.analyzer:prev_visible_enemies() == 0 and self.analyzer:visible_enemies() > 0 and
+    local rushed_into_enemies = ANALYZER:prev_visible_enemies() == 0 and ANALYZER:visible_enemies() > 0 and
         self:last_command_moved()
 
-    local many_new_enemies = self.analyzer:visible_enemies() >
-        (self.analyzer:prev_visible_enemies() + self.many_new_enemies_count)
+    local many_new_enemies = ANALYZER:visible_enemies() >
+        (ANALYZER:prev_visible_enemies() + self.many_new_enemies_count)
 
     local result = false
-    if self.config.show_rushing_alert and self.player_rushing and (rushed_into_enemies or many_new_enemies) then
+    if CONFIG.show_rushing_alert and self.player_rushing and (rushed_into_enemies or many_new_enemies) then
       result = true
     end
     LOGGER:trace("stop_command end, will return=" .. tostring(result))
@@ -192,7 +190,7 @@ STOP_ALERT = {
 
   move_into_flames_check = function(self, entity, command, time_confirm)
     local result = 0
-    if self.config.warn_flaming_movement and STOP_ALERT:will_move_into("flames", "permaflames") then
+    if CONFIG.warn_flaming_movement and STOP_ALERT:will_move_into("flames", "permaflames") then
       if time_confirm == 0 then
         ui:confirm {
           size    = ivec2(23, 8),
@@ -212,7 +210,7 @@ STOP_ALERT = {
 
   move_into_toxic_cloud_check = function(self, entity, command, time_confirm)
     local result = 0
-    if self.config.warn_toxic_movement and STOP_ALERT:will_move_into("toxic_smoke", "toxic_smoke_cloud") then
+    if CONFIG.warn_toxic_movement and STOP_ALERT:will_move_into("toxic_smoke", "toxic_smoke_cloud") then
       if time_confirm == 0 then
         ui:confirm {
           size    = ivec2(27, 8),

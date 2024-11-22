@@ -1,12 +1,12 @@
 nova.require "analyzer"
 nova.require "config"
+nova.require "enemy"
 nova.require "info_alert"
 nova.require "logger"
 nova.require "stop_alert"
 
 -- set the logging level
-LOGGER:set_level('trace')
-
+LOGGER:set_level('info')
 LOGGER:info("Enemy Alerter loading")
 
 --[[
@@ -21,16 +21,9 @@ TODOs:
 
 EA_MAIN = {}
 EA_MAIN.on_pre_command = function(self, entity, command, target, position, time_confirm)
-    LOGGER:trace("on_pre_command last=" ..
-        STOP_ALERT:last_command() ..
-        ", commmand=" ..
-        STOP_ALERT:get_command_name(command) .. ", pos=" .. tostring(position) .. ", time_confirm=" .. time_confirm)
     -- display the configuration once for each level
     CONFIG:show_config_terminal_on_level_entry(entity)
 
-    -- set data
-    STOP_ALERT.analyzer = ANALYZER
-    STOP_ALERT.config = CONFIG
     STOP_ALERT:set_last_command(command, target)
 
     -- clear ui:alert as it crashes the game if ui:terminal or another ui:function is called
@@ -51,7 +44,6 @@ EA_MAIN.on_pre_command = function(self, entity, command, target, position, time_
         LOGGER:info("Stopped command " .. STOP_ALERT:last_command() .. ", ms: " .. ui:get_time_ms())
         world:play_voice("vo_refuse") -- refuse the action verbally
     end
-    LOGGER:trace("on_pre_command returns=" .. result)
     return result
 end
 

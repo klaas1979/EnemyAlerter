@@ -283,11 +283,13 @@ EA_TERMINAL = {
 
 -- Helper to call on level entry to show dialog if trait is not registered
 function CONFIG.show_config_terminal_on_level_entry(self, player)
-  if not CONFIG.level_enter_dialog_displayed and not player:child("trait_enemy_alerter") then
-    local config = player:child("enemy_alerter_config")
-    EA_TERMINAL:show(config, player, EA_SETTINGS)
+  if not CONFIG.level_enter_dialog_displayed then
+    CONFIG.level_enter_dialog_displayed = true
+    if not player:child("trait_enemy_alerter") then
+      local config = player:child("enemy_alerter_config")
+      EA_TERMINAL:show(config, player, EA_SETTINGS)
+    end
   end
-  CONFIG.level_enter_dialog_displayed = true
 end
 
 register_blueprint "enemy_alerter_config" {

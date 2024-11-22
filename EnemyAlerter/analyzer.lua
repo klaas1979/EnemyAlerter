@@ -1,6 +1,3 @@
-nova.require "logger"
-nova.require "enemy"
-
 -- Experience points required per level for different difficulties
 local XP_PER_LEVEL_NEEDED = {
     {200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2400, 2600, 2800, 3000, 3200, 3400, 3600, 3800},

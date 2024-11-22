@@ -31,5 +31,5 @@
 	- take armor into account for damage
 	- take other damage like bleeding, fire and poison into account
 	- calculate crit chances and crit damage for info screen"
-	"changenote"		"Version 0.14 - Starts with no skill attached asking about adding it for trait heavy builds"
+	"changenote"		"Version 0.15 - fixed crash"
 }

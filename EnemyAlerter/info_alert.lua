@@ -1,5 +1,3 @@
-nova.require "logger"
-
 INFO_ALERT = {
   id = 7903,
   analyzer = nil,

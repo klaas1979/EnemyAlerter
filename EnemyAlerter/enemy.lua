@@ -1,5 +1,3 @@
-nova.require "logger"
-
 ENEMY = {
   level = nil,
   player = nil,
