@@ -8,6 +8,9 @@
 	"title"		"Enemy Alerter"
 	"description"		"Helper that warns about rushing into enemies and shows an info alerts about number of visible enemies and their chances to hit and kill you.
 	
+	Full integration of the Jovisec PDA (QoL mod) with the Level map and action log display to only use a single trait slot
+	(see https://steamcommunity.com/sharedfiles/filedetails/?id=3005876663).
+
 	Chances are sorted by damage categories to give a quick indication about the danger.
 	Die=you die if hit, 3/4 or more of remaining health, 1/2 or more of remaining health, 1/4 or more of remaining health, 1/10 or more of remaining health, Atk=Atk chance and damage.
 
@@ -20,10 +23,13 @@
 	Other features:
 	- Confirmation dialog to move onto a flaming tile.
 	- Confirmation dialog to move into a toxic cloud.
+	- Integration wiht Jovisec PDA mod
+
+	All features can be disabled, useful to disable toxic cloud or flaming tile confirmation dialog if immunity is present.
 
 	TODO:
 	- take armor into account for damage
 	- take other damage like bleeding, fire and poison into account
 	- calculate crit chances and crit damage for info screen"
-	"changenote"		"Version 0.12 - fixed bug in movement alerts flaming and toxic tiles"
+	"changenote"		"Version 0.13 - Integration with Jovisec PDA to only use a single trait slot"
 }

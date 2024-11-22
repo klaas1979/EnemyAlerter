@@ -4,5 +4,5 @@ meta = {
     save_version  = 100,
     save_agnostic = true,
     workshop_id   = 3354490087,
-    load_priority = 0,
+    load_priority = 10, -- after JoviSec PDA!
 }

@@ -38,6 +38,7 @@ register_blueprint "enemy_alerter" {
         on_pre_command = [=[
             function ( self, entity, command, target, position, time_confirm )
                 LOGGER:trace("on_pre_command last=" .. STOP_ALERT:last_command() .. ", commmand=" .. STOP_ALERT:get_command_name(command) .. ", pos=" .. tostring(position) .. ", time_confirm=" .. time_confirm)
+                if target and target.text and target.text.name == "JoviSec PDA" then  end
                 -- set data
                 STOP_ALERT.analyzer = ANALYZER
                 STOP_ALERT.config = CONFIG
@@ -45,7 +46,7 @@ register_blueprint "enemy_alerter" {
 
                 -- clear ui:alert as it crashes the game if ui:terminal or another ui:function is called
                 if STOP_ALERT:last_command_use() or STOP_ALERT:last_command_activate() then INFO_ALERT:clear() end
-                
+
                 -- start checks to be aborted
                 local result = 0
                 -- check if command needs to be prevented

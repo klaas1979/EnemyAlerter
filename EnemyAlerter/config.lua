@@ -1,28 +1,29 @@
 nova.require "logger"
+nova.require "levelmap"
+nova.require "runlog"
 
 CONFIG = {
   show_enemy_cth = true,
   show_rushing_alert = true,
   warn_flaming_movement = true,
   warn_toxic_movement = true,
-  ea_trait_to_reattach = nil,
 }
 -- Helper function to create generic setting
 local function create_setting(name, id, desc, active_option)
   return {
     name = name,
     id = id,
-    desc = desc,
+    description = function() return desc end,
     activate_option = active_option,
   }
 end
 
 -- Helper function to create settings
 local function create_boolean_setting(name, id, desc, config_key, new_value)
-  return create_setting(name, id, desc, function(self, ea_trait, entity, terminal)
+  return create_setting(name, id, desc, function(self, config, entity, terminal)
     CONFIG[config_key] = new_value
     LOGGER:debug(string.format("CONFIG.%s = %s", config_key, tostring(CONFIG[config_key])))
-    terminal:show(ea_trait, entity, EA_SETTINGS)
+    terminal:show(config, entity, EA_SETTINGS)
   end)
 end
 
@@ -31,10 +32,10 @@ local function create_cancel_option(id)
   return {
     name = "Return",
     id = id,
-    desc = "Safely stop configuration and return to main configuration screen",
+    description = function() return "Safely stop configuration and return to main configuration screen" end,
     cancel = true,
-    activate_option = function(self, ea_trait, entity, terminal)
-      terminal:show(ea_trait, entity, EA_SETTINGS)
+    activate_option = function(self, config, entity, terminal)
+      terminal:show(config, entity, EA_SETTINGS)
     end,
   }
 end
@@ -80,69 +81,67 @@ local EA_SETTINGS_TOXIC_ALERT = {
   create_cancel_option("toxic_cloud_cancel"),
 }
 
-local EA_SETTINGS_DETACH_SKILL = {
-  create_setting('{RDisable} Configuration via trait, use only terminals',
-    "detach_trait",
-    "Remove trait from player, configuration only via terminal",
-    function(self, ea_trait, entity, terminal)
-      LOGGER:debug("Detach configuration trait")
-      local player = world:get_player()
-      local trait = player:child("trait_enemy_alerter")
-      if trait then
-        CONFIG.ea_trait_to_reattach = trait
-        world:detach(trait)
-      end
-      terminal:show(ea_trait, entity, EA_SETTINGS)
-    end),
-  create_setting('{YEnable} Configuration via trait',
-    "attach_trait",
-    "Add trait back to player",
-    function(self, ea_trait, entity, terminal)
-      LOGGER:debug("Attach configuration trait")
-      local player = world:get_player()
-      if player:child("trait_enemy_alerter") == nil then
-        player:attach(CONFIG.ea_trait_to_reattach)
-      end
-      terminal:show(ea_trait, entity, EA_SETTINGS)
-    end),
-  create_cancel_option("enemy_rushing_cancel"),
-}
-
--- Helper function to create a setting entry
-local function create_setting_entry(name, id, desc, settings_group)
+-- Helper function to create a dynamic setting entry with description as function
+local function create_dynamic_setting_entry(name, id, desc, settings_group, cancel)
   return {
     name = name,
     id = id,
-    desc = desc,
-    activate_option = function(self, ea_trait, entity)
-      EA_TERMINAL:show(ea_trait, entity, settings_group)
+    description = desc,
+    cancel = cancel,
+    activate_option = function(self, config, entity)
+      EA_TERMINAL:show(config, entity, settings_group)
     end,
   }
 end
 
+-- Helper function to create a static setting entry with fixed description
+local function create_static_setting_entry(name, id, desc, settings_group)
+  return create_dynamic_setting_entry(name, id, function() return desc end, settings_group, false)
+end
+
+--[[
+local logl = math.min(#cpiod_log, 15)
+    local desc = ""
+    for i = 1, logl do
+        desc = desc .. cpiod_log[#cpiod_log - i + 1]
+        if i < logl then
+            desc = desc .. "\n"
+        end
+    end
+    list.fsize = logl
+
+    table.insert(list, {
+        name = "Log",
+        target = self,
+        desc = desc,
+        cancel = true,
+    })
+]]
+
 -- Define EA_SETTINGS using the helper function
 EA_SETTINGS = {
-  create_setting_entry("Enemy info screen", "enemy_info_config",
+  create_dynamic_setting_entry("Map", "level_map", LEVELMAP.create_map, nil, true),
+
+  create_dynamic_setting_entry("Log", "action_log", CPIOD_LOG.description, nil, true),
+
+  create_static_setting_entry("Enemy info screen", "enemy_info_config",
     "Configure the enemy info screen", EA_SETTINGS_INFO_SCREEN),
 
-  create_setting_entry("Rushing Alert", "rushing_alert_config",
+  create_static_setting_entry("Rushing Alert", "rushing_alert_config",
     "Configure the rushing into enemy alert", EA_SETTINGS_RUSHING_ALERT),
 
-  create_setting_entry("Flaming tile alert", "flaming_alert_config",
+  create_static_setting_entry("Flaming tile alert", "flaming_alert_config",
     "Configure the warning before moving into flaming tiles", EA_SETTINGS_FLAMING_ALERT),
 
-  create_setting_entry("Toxic cloud alert", "toxic_alert_config",
+  create_static_setting_entry("Toxic cloud alert", "toxic_alert_config",
     "Configure the warning before moving into toxic clouds", EA_SETTINGS_TOXIC_ALERT),
-
-  create_setting_entry("Add/Remove configuration skill", "change_skill",
-    "Adds or removes the skill for configuration", EA_SETTINGS_DETACH_SKILL),
 
   {
     name = "Close configuration",
     id = "close_enemy_alerter_configuration",
-    desc = "Safely stop configuration and close window",
+    description = function() return "Safely stop configuration and close window" end,
     cancel = true,
-    activate_option = function(self, ea_trait, entity, id)
+    activate_option = function(self, config, entity, id)
       LOGGER:debug("Close configuration")
     end,
   },
@@ -156,7 +155,6 @@ local ALL_SETTINGS = {
   EA_SETTINGS_RUSHING_ALERT,
   EA_SETTINGS_FLAMING_ALERT,
   EA_SETTINGS_TOXIC_ALERT,
-  EA_SETTINGS_DETACH_SKILL,
 }
 
 EA_TERMINAL = {
@@ -168,11 +166,12 @@ EA_TERMINAL = {
   show = function(self, config, entity, options)
     LOGGER:trace(string.format("EA_TERMINAL:show called with config: %s, entity: %s, options: %s",
       tostring(config), tostring(entity), tostring(options)))
+    if options then
+      local terminal_list = self:create_terminal_list(options, config)
 
-    local terminal_list = self:create_terminal_list(options, config)
-
-    -- Display the terminal UI with the constructed list
-    ui:terminal(entity, config, terminal_list)
+      -- Display the terminal UI with the constructed list
+      ui:terminal(entity, config, terminal_list)
+    end
     LOGGER:trace("EA_TERMINAL:show completed")
   end,
 
@@ -182,15 +181,15 @@ EA_TERMINAL = {
   -- @return A table representing the terminal list.
   create_terminal_list = function(self, options, config)
     local terminal_list = {
-      title = 'Configure Enemy Alerter - HellOS v0.12',
-      size = coord(50, 0),
-      fsize = 4,
+      title = 'Enemy Alerter PDA - HellOS v0.13',
+      size = coord(56, 0),
+      fsize = 18,
     }
 
     for i, option in pairs(options) do
       terminal_list[i] = {
         name = option.name,
-        desc = option.desc,
+        desc = option.description(),
         id = option.id,
         target = config,
         cancel = option.cancel or false,
@@ -247,16 +246,18 @@ register_blueprint "enemy_alerter_config" {
 register_blueprint "trait_enemy_alerter" {
   blueprint = "trait",
   text = {
-    name = "EnemyAlerter",
-    desc = "Configure Enemy Alerter to your needs",
-    full = "Configure Enemy Alerter to your needs",
-    abbr = "EA",
+    name = "EnemyAlerter PDA",
+    desc = "Helper PDA with map, log and enemy alerts",
+    full = "Helper PDA with map, log and enemy alerts",
+    abbr = "EA PDA",
   },
   skill = {
     cooldown = 0,
     cost = 0,
   },
-  attributes = {},
+  attributes = {
+    updated = 0, -- 0 if the player needs to update their map from a terminal, 1 if they have already done so.
+  },
   callbacks = {
     on_use = [=[
             function(self, entity)
@@ -264,9 +265,67 @@ register_blueprint "trait_enemy_alerter" {
                 EA_TERMINAL:show(config, entity, EA_SETTINGS)
             end
         ]=],
+    on_enter_level = [=[
+			function ( self, entity, reenter )
+				local linfo = world:get_level().level_info
+				local episode = linfo.episode
+				local depth = linfo.depth
+				depth = depth - 7 * (episode - 1)
+				if depth == 1 then
+					self.attributes.updated = 0
+				end
+				if depth > 1 and self.attributes.updated == 0 and episode <= 3 then
+					if reenter then return end
+					local level = world:get_level()
+					for e in level:entities() do
+						if world:get_id( e ) == "terminal" then
+                            e:attach( "event_pda_update" )
+						end
+					end
+				end
+			end
+					
+		]=], --Resets updated to 0 when the player enters a new moon. Adds the option to update the map to the terminal if not on the first level of a moon and not on Dante.
   },
 }
 
+register_blueprint "event_pda_update"
+{
+  flags = { EF_NOPICKUP },
+  text = {
+    entry    = "Download map to PDA",
+    complete = "PDA map downloaded",
+    desc     = "Download the map to PDA to display current location"
+  },
+  data = {
+    terminal = {
+      priority = 9,
+    },
+  },
+  callbacks = {
+    on_activate = [=[
+		function( self, who, level )
+			local parent  = ecs:parent( self )
+			local trait = who:child("trait_enemy_alerter")
+			trait.attributes.updated = 1
+			ui:set_hint( "{R".."Map downloaded".."}", 1001, 0 )
+			world:destroy( self )
+			ui:activate_terminal( who, parent )
+		end
+		]=] --Changes updated to 1 when the option is selected on a terminal.
+  }
+}
+
+world.register_on_entity(function(x)
+  if x.data and x.data.ai and x.data.ai.group == "player" then
+    x:attach("trait_enemy_alerter")
+    x:attach("enemy_alerter_config")
+  end
+end)
+
+
+-- just for reference this is the way to configure via terminal, not used as the mod is integraded with Jovisec PDA
+--[[
 register_blueprint "enemy_alerter_terminal" {
   flags = { EF_NOPICKUP },
   text = {
@@ -276,7 +335,7 @@ register_blueprint "enemy_alerter_terminal" {
   },
   data = {
     terminal = {
-      priority = 9,
+      priority = 0,
     },
   },
   callbacks = {
@@ -288,10 +347,4 @@ register_blueprint "enemy_alerter_terminal" {
         ]=],
   }
 }
-
-world.register_on_entity(function(x)
-  if x.data and x.data.ai and x.data.ai.group == "player" then
-    x:attach("trait_enemy_alerter")
-    x:attach("enemy_alerter_config")
-  end
-end)
+--]]
