@@ -7,9 +7,36 @@ CONFIG = {
   show_rushing_alert = true,
   warn_flaming_movement = true,
   warn_toxic_movement = true,
-  updated = 0,
   level_enter_dialog_displayed = false,
+  map_downloaded = nil,
 }
+
+CONFIG.is_map_downloaded = function(self)
+  if self.map_downloaded == nil then
+    self.map_downloaded = true -- for the levels without terminals to have state
+    -- check state of terminal to initialize the state
+    local level = world:get_level()
+    local linfo = level.level_info
+    local episode = linfo.episode
+    local depth = linfo.depth
+    depth = depth - 7 * (episode - 1)
+    -- attach option to download the map to all terminals off level
+    if depth > 1 and episode <= 3 then
+      for e in level:entities() do
+        if world:get_id(e) == "terminal" then
+          if e:child("event_pda_update") then
+            self.map_downloaded = false
+          else
+            self.map_downloaded = true
+          end
+        end
+      end
+    else
+      self.map_downloaded = false -- player must use terminal to download the map or too late episode
+    end
+  end
+  return self.map_downloaded
+end
 
 -- Helper function to create generic setting
 local function create_setting(name, id, desc, active_option)
@@ -231,7 +258,7 @@ EA_TERMINAL = {
   -- @return A table representing the terminal list.
   create_terminal_list = function(self, options, config)
     local terminal_list = {
-      title = 'Enemy Alerter PDA - HellOS v0.13',
+      title = 'Enemy Alerter PDA - HellOS v0.16',
       size = coord(56, 0),
       fsize = 18,
     }
@@ -355,9 +382,9 @@ register_blueprint "event_pda_update"
     on_activate = [=[
     function( self, who, level )
       local parent  = ecs:parent( self )
-      CONFIG.updated = 1 -- Map is downloaded
       ui:set_hint( "{R".."Map downloaded".."}", 1001, 0 )
       world:destroy( self )
+      CONFIG.map_downloaded = true
       ui:activate_terminal( who, parent )
     end
     ]=], --Changes updated to 1 when the option is selected on a terminal.

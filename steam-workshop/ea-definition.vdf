@@ -31,5 +31,5 @@
 	- take armor into account for damage
 	- take other damage like bleeding, fire and poison into account
 	- calculate crit chances and crit damage for info screen"
-	"changenote"		"Version 0.16 - fixed move into not working after refactoring"
+	"changenote"		"Version 0.16 - fixed move into not working after refactoring + save of map downloaded without skill"
 }

@@ -10,14 +10,13 @@ LEVELMAP.on_enter_level = function(self, entity, reenter)
     local episode = linfo.episode
     local depth = linfo.depth
     depth = depth - 7 * (episode - 1)
-    if depth == 1 then
-        CONFIG.updated = 0 -- player must use terminal to download the map
-    end
     -- attach option to download the map to all terminals off level
-    for e in level:entities() do
-        if world:get_id(e) == "terminal" then
-            if depth > 1 and CONFIG.updated == 0 and episode <= 3 then
-                e:attach("event_pda_update")
+    if CONFIG:is_map_downloaded() == false then
+        for e in level:entities() do
+            if world:get_id(e) == "terminal" then
+                if depth > 1 and episode <= 3 then
+                    e:attach("event_pda_update")
+                end
             end
         end
     end
@@ -46,9 +45,8 @@ local function hilite_pos_side_branch(all_strings, branch_number, depth, max_bra
     all_strings[y] = string.sub(all_strings[y], 1, br_pos[i] - 1) .. "GX" .. string.sub(all_strings[y], br_pos[i] + 2)
 end
 
-
 function LEVELMAP.create_map()
-    local updated = CONFIG.updated
+    local updated = CONFIG:is_map_downloaded()
     local result = ""
     local list = {}
     local strings_3 = {
@@ -164,7 +162,7 @@ function LEVELMAP.create_map()
         result = "No map for Dante station"
     elseif episode > 4 then
         result = "Unknown location"
-    elseif updated == 0 then
+    elseif updated == false then
         result = "Download the map from a terminal!"
     else
         local i = level_2_depth - 1
