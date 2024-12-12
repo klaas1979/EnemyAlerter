@@ -65,7 +65,7 @@ register_blueprint "enemy_alerter" {
         -- store last action type and check if command should be stopped
         on_pre_command = [=[
             function ( self, entity, command, target, position, time_confirm )
-                EA_MAIN.on_pre_command( self, entity, command, target, position, time_confirm )
+                return EA_MAIN.on_pre_command( self, entity, command, target, position, time_confirm )
             end
         ]=],
 
